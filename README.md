@@ -18,7 +18,7 @@ However, real-world ECG analysis faces two major hurdles:
 1. **Noisy Signals**: Loose electrodes, patient shivering, and breathing drift produce artifacts that mimic heart attacks, causing false alarms and hospital overcrowding.
 2. **The "Black-Box" AI Dilemma**: Pure deep-learning models lack clinical interpretability. Clinicians cannot verify *why* a neural network triggered an alarm.
 
-**CardioSense bridges this gap** using a **dual-engine architecture**: pairing clinically certified cardiological measurements (ST elevation, J-point shifts, QRS duration, HRV) with raw deep waveform representations, gated by strict signal-quality checks.
+**This project bridges this gap** using a **dual-engine architecture**: pairing clinically certified cardiological measurements (ST elevation, J-point shifts, QRS duration, HRV) with raw deep waveform representations, gated by strict signal-quality checks.
 
 ---
 
