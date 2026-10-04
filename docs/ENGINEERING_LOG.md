@@ -124,3 +124,13 @@ Limb Leads:       Lead I: -0.008 mV | Lead II: +0.021 mV | Lead III: +0.021 mV
 Augmented Leads:  aVR:    +0.001 mV | aVL:     -0.020 mV | aVF:      +0.027 mV
 Precordial Leads: V1:     +0.053 mV | V2:      +0.093 mV | V3:       +0.035 mV
                   V4:     +0.020 mV | V5:      +0.007 mV | V6:       +0.006 mV
+
+
+*Clinical Interpretation*: All 12 leads hover tightly around the $0.00\text{ mV}$ baseline, accurately confirming absence of acute ischemic displacement in this normal subject.
+
+![Figure 5: Beat Landmarks](figures/05_beat_landmarks.png)  
+*Figure 5: Zoomed-in single-beat morphology (Lead II) displaying PR isoelectric baseline (blue), R-peak (red), S-peak (purple), J-point (orange), and ST measurement point at J + 60 ms (green).*  
+📎 **Attachment**: [`figures/05_beat_landmarks.png`](figures/05_beat_landmarks.png)
+
+---
+
