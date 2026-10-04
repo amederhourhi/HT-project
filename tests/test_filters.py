@@ -1,33 +1,29 @@
 """
 CardioSense - Filter Verification Test
 Compares Raw ECG vs Cleaned ECG to visually verify baseline wander removal.
+Saves the figure to docs/figures/02_filter_comparison.png.
 """
 
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------
-# Block 1: Add project root to Python search path so it finds 'src'
-# ---------------------------------------------------------
+# Add project root to path
 project_root = Path(__file__).resolve().parents[1]
 sys.path.append(str(project_root))
 
 import matplotlib.pyplot as plt
 import numpy as np
 import wfdb
-
-# Now we can safely import our custom filter
 from src.dsp.filters import filter_ecg
 
 # ---------------------------------------------------------
-# Block 2: Load a raw sample record from data/samples
+# Block 1: Load a raw sample record
 # ---------------------------------------------------------
 samples_dir = project_root / "data" / "samples"
+figures_dir = project_root / "docs" / "figures"
+figures_dir.mkdir(parents=True, exist_ok=True)
+
 header_files = list(samples_dir.glob("**/*.hea"))
-
-if not header_files:
-    raise FileNotFoundError("No samples found. Run download_ptbxl.py first.")
-
 record_path = str(header_files[0].with_suffix(""))
 raw_signals, fields = wfdb.rdsamp(record_path)
 fs = fields["fs"]
@@ -35,16 +31,15 @@ lead_names = fields["sig_name"]
 time_axis = np.arange(raw_signals.shape[0]) / fs
 
 # ---------------------------------------------------------
-# Block 3: Apply our zero-phase filter (0.5 - 40 Hz)
+# Block 2: Apply zero-phase filter (0.5 - 40 Hz)
 # ---------------------------------------------------------
 cleaned_signals = filter_ecg(raw_signals, fs=fs, lowcut=0.5, highcut=40.0)
 
 # ---------------------------------------------------------
-# Block 4: Plot Raw vs Filtered comparison on Lead II and Lead III
+# Block 3: Plot Raw vs Filtered comparison on Lead II and Lead III
 # ---------------------------------------------------------
 fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(14, 7), sharex=True)
 
-# Find Lead II and Lead III indexes
 lead_ii_idx = lead_names.index("II") if "II" in lead_names else 1
 lead_iii_idx = lead_names.index("III") if "III" in lead_names else 2
 
@@ -66,4 +61,10 @@ ax2.grid(True, linestyle="--", alpha=0.5)
 ax2.legend(loc="upper right")
 
 plt.tight_layout()
+
+# Save figure to docs/figures/
+save_path = figures_dir / "02_filter_comparison.png"
+plt.savefig(save_path, dpi=150)
+print(f"[Saved figure to: {save_path.relative_to(project_root)}]")
+
 plt.show()
