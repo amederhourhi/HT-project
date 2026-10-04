@@ -118,13 +118,22 @@ During acute coronary occlusion (STEMI), ischemic cardiomyocytes generate an ele
   - **Max ST Elevation**: $+0.093\text{ mV}$ (remains safely below the acute ischemic alarm threshold of $0.10\text{ mV}$).
   - **Max ST Depression**: $-0.020\text{ mV}$.
 
-#### 12-Lead ST Deviation Breakdown
-```text
-Limb Leads:       Lead I: -0.008 mV | Lead II: +0.021 mV | Lead III: +0.021 mV
-Augmented Leads:  aVR:    +0.001 mV | aVL:     -0.020 mV | aVF:      +0.027 mV
-Precordial Leads: V1:     +0.053 mV | V2:      +0.093 mV | V3:       +0.035 mV
-                  V4:     +0.020 mV | V5:      +0.007 mV | V6:       +0.006 mV
+### 12-Lead ST Deviation Breakdown
 
+| Lead Group | Lead | Measured ST Deviation | Acute Alarm Status |
+| :--- | :--- | :--- | :--- |
+| **Limb Leads** | Lead I | `-0.008 mV` | Normal ($< 0.10\text{ mV}$) |
+| | Lead II | `+0.021 mV` | Normal ($< 0.10\text{ mV}$) |
+| | Lead III | `+0.021 mV` | Normal ($< 0.10\text{ mV}$) |
+| **Augmented Leads** | aVR | `+0.001 mV` | Normal |
+| | aVL | `-0.020 mV` | Normal |
+| | aVF | `+0.027 mV` | Normal ($< 0.10\text{ mV}$) |
+| **Precordial Leads** | V1 | `+0.053 mV` | Normal ($< 0.20\text{ mV}$) |
+| | V2 | `+0.093 mV` | Normal ($< 0.20\text{ mV}$) |
+| | V3 | `+0.035 mV` | Normal ($< 0.20\text{ mV}$) |
+| | V4 | `+0.020 mV` | Normal ($< 0.10\text{ mV}$) |
+| | V5 | `+0.007 mV` | Normal ($< 0.10\text{ mV}$) |
+| | V6 | `+0.006 mV` | Normal ($< 0.10\text{ mV}$) |
 
 *Clinical Interpretation*: All 12 leads hover tightly around the $0.00\text{ mV}$ baseline, accurately confirming absence of acute ischemic displacement in this normal subject.
 
@@ -134,3 +143,10 @@ Precordial Leads: V1:     +0.053 mV | V2:      +0.093 mV | V3:       +0.035 mV
 
 ---
 
+## Next Engineering Milestone: Subphase 2.3 & 2.4
+
+- [x] Phase 1: Environment, Ingestion, DSP Bandpass Filter, SQI Quality Gate
+- [x] Phase 2.1: R-Peak Detector & HRV Metrics
+- [x] Phase 2.2: Fiducial Landmarking & 12-Lead ST Deviation Extractor
+- [ ] **Phase 2.3: End-to-End Feature Aggregator Pipeline** (`src/features/extract_features.py`)
+- [ ] **Phase 2.4: Interpretable Machine Learning Model** (Training a calibrated classifier on PTB-XL folds)
