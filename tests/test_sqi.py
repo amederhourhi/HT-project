@@ -73,7 +73,7 @@ ax2.legend(loc="upper right")
 plt.tight_layout()
 
 # Save figure
-save_path = figures_dir / "03_sqi_assessment.png"
+save_path = figures_dir / "04_sqi_assessment.png"
 plt.savefig(save_path, dpi=150)
 print(f"[Saved figure to: {save_path.relative_to(project_root)}]")
 

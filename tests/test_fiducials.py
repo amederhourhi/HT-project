@@ -87,7 +87,7 @@ plt.tight_layout()
 # Save to docs/figures/
 figures_dir = project_root / "docs" / "figures"
 figures_dir.mkdir(parents=True, exist_ok=True)
-save_path = figures_dir / "beat_landmarks.png"
+save_path = figures_dir / "05_beat_landmarks.png"
 plt.savefig(save_path, dpi=150)
 print(f"\n[Saved verification plot to: {save_path.relative_to(project_root)}]")
 
