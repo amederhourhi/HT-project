@@ -89,7 +89,7 @@ However, real-world ECG analysis faces two major hurdles:
 ##  Repository Structure
 
 ```text
-cardiosense/
+HT-project/
 ├── data/
 │   ├── raw/             # Local PTB-XL database metadata
 │   └── samples/         # Downloaded 100 Hz 12-lead sample records
@@ -105,6 +105,7 @@ cardiosense/
 │   └── figures/            # Clinical verification plots
 ├── requirements.txt     # Python dependencies
 └── README.md
+```
 
 > [!WARNING]
 > ### Medical Device & Clinical Disclaimer
