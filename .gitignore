@@ -1,0 +1,28 @@
+# Virtual Environment (libraries installed on your machine)
+venv/
+env/
+.env
+
+# Python compilation cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Local raw datasets & models (too big for GitHub)
+data/raw/
+data/ptbxl/
+models/checkpoints/
+*.pt
+*.onnx
+
+# IDE settings & OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Streamlit temporary state
+.streamlit/
