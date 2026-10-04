@@ -33,7 +33,9 @@ Clinical ECG acquisition is prone to real-world physical noise. Patient respirat
 ### Observations
 The raw recordings show clear QRS complexes across all 12 standard leads (I, II, III, aVR, aVL, aVF, V1–V6). Significant baseline wander is visible in the inferior limb leads (Lead II, III, and aVF), confirming the critical need for pre-filtering prior to ST-segment elevation analysis.
 
-![Figure 1: Raw 12-Lead ECG](figures/01_raw_12lead_ecg.png)
+![Figure 1: Raw 12-Lead ECG](figures/01_raw_12lead_ecg.png)  
+*Figure 1: 10-second 12-lead raw clinical ECG showing baseline wander and high-frequency noise.*  
+📎 **Attachment**: [`figures/01_raw_12lead_ecg.png`](figures/01_raw_12lead_ecg.png)
 
 ---
 
@@ -50,7 +52,9 @@ Accurate diagnosis of ST-Elevation Myocardial Infarction (STEMI) requires measur
 - **Verification**: `tests/test_filters.py`.
 - **Result**: Drifting baselines in Lead II and Lead III were completely flattened to a stable $0.00\text{ mV}$ isoelectric reference line without attenuating QRS peak amplitudes.
 
-![Figure 2: Filter Comparison](figures/02_filter_comparison.png)
+![Figure 2: Filter Comparison](figures/02_filter_comparison.png)  
+*Figure 2: Lead II & Lead III comparison demonstrating zero-phase baseline wander elimination.*  
+📎 **Attachment**: [`figures/02_filter_comparison.png`](figures/02_filter_comparison.png)
 
 ---
 
@@ -73,7 +77,9 @@ Identifying individual cardiac cycles is the foundation for rhythm classificatio
 | **SDNN (Total HRV)** | **18.1 ms** | Physiological | Stable beat-to-beat spacing |
 | **RMSSD (Vagal Tone)** | **24.9 ms** | Physiological | Normal parasympathetic tone |
 
-![Figure 3: R-Peaks Detected](figures/03_r_peaks_detected.png)
+![Figure 3: R-Peaks Detected](figures/03_r_peaks_detected.png)  
+*Figure 3: Lead II rhythm strip showing 11 detected R-peaks (red dots) and calculated resting HRV.*  
+📎 **Attachment**: [`figures/03_r_peaks_detected.png`](figures/03_r_peaks_detected.png)
 
 ---
 
@@ -92,7 +98,9 @@ If an electrode detaches or an amplifier rails to saturation, feeding the artifa
 - **Test 1 (Clinical 12-Lead Record)**: Overall SQI of **0.914**; all 12/12 leads passed ($SQI \ge 0.60$). Status: **ACCEPTED**.
 - **Test 2 (Simulated Disconnected Lead V2)**: Lead V2 flatline was instantly assigned **SQI = 0.000**. Status: **REJECTED**.
 
-![Figure 4: SQI Assessment](figures/04_sqi_assessment.png)
+![Figure 4: SQI Assessment](figures/04_sqi_assessment.png)  
+*Figure 4: 12-Lead SQI scores across all channels and automated rejection of disconnected Lead V2.*  
+📎 **Attachment**: [`figures/04_sqi_assessment.png`](figures/04_sqi_assessment.png)
 
 ---
 
