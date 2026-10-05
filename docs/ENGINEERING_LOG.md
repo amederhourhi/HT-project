@@ -171,6 +171,8 @@ A clinical decision-support pipeline cannot process features in isolated silos. 
 
 ---
 
+---
+
 ## 7. Interpretable Machine Learning Model & Diagnostic Evaluation
 
 ### Clinical Rationale
@@ -195,7 +197,6 @@ To provide transparent decision support, we trained a calibrated classifier stri
                   Predicted Normal     Predicted Infarction (MI)
 Actual Normal:          18 (TN)                  2 (FP - False Alarm)
 Actual Infarction:      12 (FN)                 20 (TP - Detected MI)
-```
 ---
 
 ## 8. Deep Waveform Model (1D-CNN) & Neural Architecture
