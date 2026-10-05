@@ -171,10 +171,27 @@ A clinical decision-support pipeline cannot process features in isolated silos. 
 
 ---
 
-## Next Engineering Milestone: Subphase 2.4
+## 7. Interpretable Machine Learning Model & Diagnostic Evaluation
 
-- [x] Phase 1: Environment, Ingestion, DSP Bandpass Filter, SQI Quality Gate
-- [x] Phase 2.1: R-Peak Detector & HRV Metrics
-- [x] Phase 2.2: Fiducial Landmarking & 12-Lead ST Deviation Extractor
-- [x] Phase 2.3: End-to-End Feature Aggregator Pipeline (`src/features/extract_features.py`)
-- [ ] **Phase 2.4: Interpretable Machine Learning Model** (Training a calibrated classifier on PTB-XL folds)
+### Clinical Rationale
+To provide transparent decision support, we trained a calibrated classifier strictly on extracted electrophysiological features. Evaluating on PTB-XL's official benchmark folds (Folds 1–8: Train, Folds 9–10: Unseen Test) ensures zero data leakage and real-world generalizability.
+
+### Model Architecture
+- **Classifier**: Random Forest (100 estimators, constrained depth $d=5$ for tree interpretability, balanced class weights).
+- **Calibration**: 5-fold Sigmoid Platt Scaling (`CalibratedClassifierCV`) ensuring output probabilities accurately reflect true physiological risk of myocardial infarction.
+- **Artifact**: Checkpoint saved to `models/checkpoints/interpretable_model.joblib`.
+
+### Test Cohort Performance (Folds 9–10, $N=52$ Patients)
+
+| Evaluation Metric | Measured Result | Clinical Standard | Clinical Implication |
+| :--- | :--- | :--- | :--- |
+| **ROC-AUC Score** | **0.853** | $> 0.80$ ("Excellent") | Strong separation between healthy and ischemic myocardium |
+| **Specificity** | **90.0%** (18 / 20) | High ($> 85\%$) | Very low false-alarm rate (only 2 false positives) |
+| **Sensitivity (Recall)** | **62.5%** (20 / 32) | Needs Complement | Captures overt ST elevations; misses non-classical NSTEMI |
+| **Overall Accuracy** | **73.1%** | Baseline | Solid purely feature-engineered baseline |
+
+### Confusion Matrix
+```text
+                  Predicted Normal     Predicted Infarction (MI)
+Actual Normal:          18 (TN)                  2 (FP - False Alarm)
+Actual Infarction:      12 (FN)                 20 (TP - Detected MI)

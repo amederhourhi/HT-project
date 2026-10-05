@@ -1,4 +1,5 @@
 # Virtual Environment (libraries installed on your machine)
+.venv/
 venv/
 env/
 .env
@@ -14,9 +15,13 @@ build/
 # Local raw datasets & models (too big for GitHub)
 data/raw/
 data/ptbxl/
+data/cohort/
+data/samples/
 models/checkpoints/
 *.pt
 *.onnx
+*.joblib
+*.pkl
 
 # IDE settings & OS junk
 .vscode/
