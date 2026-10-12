@@ -23,6 +23,9 @@ models/checkpoints/
 *.joblib
 *.pkl
 
+# Generated evaluation artifacts (recreate with src/evaluation/score_guardrails.py)
+artifacts/
+
 # IDE settings & OS junk
 .vscode/
 .idea/

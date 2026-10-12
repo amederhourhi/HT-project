@@ -287,6 +287,9 @@ Furthermore, actionable cardiology requires **anatomical culprit vessel localiza
 *Figure 9: Multi-engine probability comparison and anatomical coronary territory ischemic localization across normal and infarcted patients.*  
 📎 **Attachment**: [`figures/09_risk_explainability.png`](figures/09_risk_explainability.png)
 
+> [!IMPORTANT]
+> **Superseded in Section 11.** The "Standard Specificity 100.0% (20 / 20)" row above is a measurement of the *fused ensemble in isolation*. It is not the specificity of the deployed system: `ClinicalTriageEngine` runs after the ensemble and escalates patients on its own. Section 11 measures the shipped cascade and finds 5 of these same 20 healthy controls are escalated to `TIER_3_ESCALATION` by a deterministic rule.
+
 ---
 
 ## 10. Deterministic Clinical Safety Guardrails & SBAR Report Generation (Phase 5)
@@ -313,10 +316,97 @@ In an automated hospital triage queue, releasing this patient under "Routine Fol
 | **Patient 1 (`00001_lr`)** | Normal Control | 13.9% | **INACTIVE** (Within Bounds) | **`TIER_1_ROUTINE`** | **13.9%** | Routine Follow-up (Normal / Sub-acute findings) |
 | **Patient 8 (`00008_lr`)** | Anterior Infarct | 11.9% | **ACTIVE (CRITICAL)**: Precordial ST `+0.218 mV` $\ge 0.200\text{ mV}$ | **`TIER_3_ESCALATION`** | **85.0%** (Emergency Floor) | **Immediate Emergency Escalation -- Stat Cardiology / Cath Lab Activation** |
 
+> [!NOTE]
+> These two records are a *demonstration*, not a verification. Both behave as designed; nothing here establishes how the rules behave on a population. Section 11 extends the same rules to all 251 extracted records and the picture changes substantially.
+
 ### Auditable SBAR Clinical Reports (`src/triage/report_generator.py`)
 Both clinical reports were automatically compiled and exported to the permanent clinical audit directory:
 - 📎 **Normal Patient Note**: [`docs/reports/patient_00001_lr_triage_report.txt`](reports/patient_00001_lr_triage_report.txt)
 - 📎 **STEMI Safeguarded Note**: [`docs/reports/patient_00008_lr_triage_report.txt`](reports/patient_00008_lr_triage_report.txt)
+
+---
+
+## 11. Deterministic Guardrail Layer Audit — System-Level Verification (Hardening Sprint P0-1)
+
+### Why This Section Exists
+
+Sections 9 and 10 report specificity for the statistical engines in isolation: Engine A at $p \ge 0.50$, Engine B at its argmax, and the fused ensemble at 100.0%. None of those figures describe the deployed product. `ClinicalTriageEngine` runs *after* the fusion layer and can escalate a patient to `TIER_3_ESCALATION` independently of the model probability — and it is that override, not the probability, that decides the tier a patient is routed to.
+
+The "100% Guardrail Verification" milestone was supported by two hand-picked records. This section replaces spot-checking with a population measurement.
+
+### Instrumentation
+
+| Module | Role |
+| :--- | :--- |
+| `src/evaluation/triage_metrics.py` | Pure metric helpers: `RecordOutcome`, per-class escalation rates, Wilson score intervals |
+| `src/evaluation/score_guardrails.py` | CLI adapter that replays the shipped rules over every row of `clinical_features.csv` |
+
+Two design decisions matter for the trustworthiness of everything below:
+
+1. **The scorer executes `src/triage/triage_rules.py` directly rather than restating its thresholds.** A reimplementation would let the audit and the product drift apart, which is precisely the defect this section documents. What is measured is what ships.
+2. **Baseline risk is pinned to `0.0`** in the adapter input, so every escalation counted is attributable to a deterministic rule alone, with no statistical contribution.
+
+Confidence intervals are Wilson score intervals rather than the normal approximation. The test fold holds only 20 healthy records, where a bare percentage like "25%" carries almost no information on its own.
+
+### Cohort-Level Results (`data/processed/clinical_features.csv`, $N = 251$)
+
+| Slice | Cohort | n | Escalated | Rate | 95% CI (Wilson) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **All** | Normal control | 124 | 32 | **25.8%** | [18.9%, 34.2%] |
+| **All** | Infarction | 127 | 58 | 45.7% | [37.3%, 54.3%] |
+| Train (Folds 1–8) | Normal control | 104 | 27 | 26.0% | [18.5%, 35.1%] |
+| Train (Folds 1–8) | Infarction | 95 | 46 | 48.4% | [38.6%, 58.3%] |
+| Test (Folds 9–10) | Normal control | 20 | 5 | **25.0%** | [11.2%, 46.9%] |
+| Test (Folds 9–10) | Infarction | 32 | 12 | 37.5% | [22.9%, 54.7%] |
+
+The healthy-class rate is statistically indistinguishable between the train and test slices, which rules out a test-fold sampling accident. **Roughly one in four healthy ECGs is escalated to emergency care by the deterministic layer as currently written.**
+
+### Cause Breakdown of the 32 Healthy Escalations
+
+| Guardrail | Records Triggering | Records Where It Is the Sole Cause |
+| :--- | :--- | :--- |
+| G1 — Anterior (V1–V4 $\ge 0.20\text{ mV}$) | 19 | 11 |
+| G1 — Lateral (I, aVL, V5, V6 $\ge 0.10\text{ mV}$) | 11 | 3 |
+| G3 — Conduction delay (QRS $\ge 130\text{ ms}$) | 7 | 6 |
+| G1 — Inferior (II, III, aVF $\ge 0.10\text{ mV}$) | 4 | 1 |
+| G2 — Rhythm extreme (HR $>$ 130 or $<$ 40 BPM) | 1 | 1 |
+
+10 records were triggered by more than one rule. Anterior ST values among the escalated healthy controls split as $\ge 0.25\text{ mV}$: 8, $0.20$–$0.249$: 11, $0.15$–$0.199$: 6, below $0.15$: 7. Lateral values split as $\ge 0.15$: 2, $0.10$–$0.149$: 9, below $0.10$: 21.
+
+### Findings
+
+**1. Single-lead triggering inflates sensitivity to noise.** The AHA/ACC and Fourth Universal Definition criteria require ST elevation in **two contiguous leads**. `triage_rules.py` tests a single regional maximum, so record `2596` escalates a healthy patient on one lateral lead at $+0.104\text{ mV}$ — four thousandths of a millivolt over threshold, with its anterior reading sub-criteria at $+0.186\text{ mV}$.
+
+**2. One flat precordial threshold is applied where guidelines are demographic.** All of V1–V4 are judged at $\ge 0.20\text{ mV}$. The published cut-points are $\ge 0.1\text{ mV}$ for V1 and V4, and for V2–V3 specifically: $\ge 0.15\text{ mV}$ in women, $\ge 0.20\text{ mV}$ in men aged $\ge 40$, $\ge 0.25\text{ mV}$ in men aged $< 40$. The current rule is simultaneously too strict for V2–V3 in women and too permissive for V1 and V4. `age` and `sex` are already carried in the feature CSV and are unused.
+
+**3. Guardrail 3 fires on a measurement artifact.** All 7 conduction-delay hits among healthy controls report QRS of exactly `130.0` or `140.0 ms` — the ceiling of the range `fiducials.py` is structurally capable of producing, since Q-onset is searched only 60 ms before R while J-point is fixed at S-peak $+ 30$ ms. A duration that cannot exceed its own search window is not a measurement, and a safety rule must not depend on one.
+
+**4. Landmarking failures leak directly into the safety layer.** 12 of the 55 records that trip the anterior criterion cohort-wide report a QRS of 30–40 ms, a physiologically impossible conduction time. Delineation collapse is therefore not only an accuracy problem — it is generating acute-injury evidence.
+
+### Corrections to Previously Published Claims
+
+- **Section 9, "Standard Specificity 100.0% (20 / 20) — Zero false alarms on normal healthy controls."** Correct for the fused ensemble in isolation; **incorrect for the shipped cascade**. 5 of those same 20 healthy controls are escalated to `TIER_3_ESCALATION`.
+- **Section 10 / Milestones, "100% Guardrail Verification."** The verification covered 2 records. Coverage is now 251, and the outcome is materially worse than the demonstration implied.
+- **Section 10, Patient 8 escalation.** Still correct and still desirable: this audit is about not escalating *healthy* patients, not about withdrawing the override that caught `00008_lr`.
+
+Any future specificity or sensitivity figure in this log must state whether it is measured at the engine, the fusion, or the post-guardrail cascade. These are three different systems.
+
+### Reproduction
+
+```bash
+# Human-readable audit of the official held-out fold
+python src/evaluation/score_guardrails.py --scope test
+
+# Whole cohort, machine-readable artifact for CI, and the acceptance gate
+python src/evaluation/score_guardrails.py --scope all \
+    --json-out artifacts/guardrail_audit.json --fail-above 0.05
+```
+
+The second command exits non-zero today (25.8% against a 5% budget). That is intended: it is the acceptance test for P0-2.
+
+### Next (P0-2)
+
+Rewrite Guardrail 1 against the contiguous-lead criteria with sex- and age-specific V2–V3 cut-points, add the aVR and ST-depression patterns that currently have no rule at all, and give each rule a stable `rule_id` so escalations can be attributed programmatically instead of by reading report prose. Healthy-class escalation target: below 5% at the `--fail-above 0.05` gate, with Patient 8 still escalated.
 
 ---
 
@@ -327,6 +417,11 @@ Both clinical reports were automatically compiled and exported to the permanent 
 - [x] Phase 3: Lightweight 1D-CNN Waveform Model (45k params, Sub-10ms Inference)
 - [x] Refinement Sprint: Physiological Q-Onset Detection & Triage Threshold Tuning (AUC: 0.861)
 - [x] Phase 4: Calibrated Ensemble Risk Fusion & Explainability (Ensemble AUC: 0.897)
-- [x] **Phase 5: Safety-Guardrailed Clinical Triage & SBAR Clinical Reports (100% Guardrail Verification)**
+- [x] Phase 5: Safety-Guardrailed Clinical Triage & SBAR Clinical Reports (2-record demonstration)
+- [x] **Hardening Sprint P0-1: Guardrail Layer Audit — population verification, $N = 251$ (Section 11)**
+- [ ] **Hardening Sprint P0-2: Contiguous-lead STEMI criteria (target: healthy escalation < 5%)**
+- [ ] **Hardening Sprint P0-3: Rebuild QRS/ST delineation and guard physiologically impossible measurements**
+- [ ] **Hardening Sprint P0-4: Comparable dual-engine cohorts and reconciled benchmark metrics**
+- [ ] **Hardening Sprint P0-5: Traceable SBAR report and a single source of truth for triage tiers**
 - [ ] **Phase 6: Interactive Clinician Dashboard (Streamlit)**
 - [ ] **Phase 7: ESP32 Hardware Streaming Integration**
