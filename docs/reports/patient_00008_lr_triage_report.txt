@@ -1,0 +1,37 @@
+================================================================================
+                 CARDIOSENSE CLINICAL DECISION-SUPPORT REPORT                   
+================================================================================
+PATIENT IDENTIFIER     : 00008_lr
+FINAL TRIAGE TIER      : [TIER_3_ESCALATION]
+RECOMMENDED ACTION     : Immediate Emergency Escalation -- Stat Cardiology / Cath Lab Activation
+EFFECTIVE CARDIAC RISK : 85.0%
+--------------------------------------------------------------------------------
+1. SIGNAL QUALITY & INTEGRITY AUDIT
+   - Overall SQI Score : 0.914 / 1.000 (Pass threshold: >= 0.600)
+   - Lead Status       : 12/12 standard leads validated (No flatlines or rail clipping)
+--------------------------------------------------------------------------------
+2. AI MULTI-ENGINE ENSEMBLE PROBABILITIES
+   - Interpretable Biomarker RF : 22.2%
+   - Deep Waveform 1D-CNN       : 1.6%
+   - Baseline Fused Probability : 11.9%
+--------------------------------------------------------------------------------
+3. DETERMINISTIC CLINICAL SAFETY GUARDRAILS
+   - Hard Safety Override       : ACTIVE (CRITICAL)
+   - Triggered Safeguards       :
+     * AHA/ACC STEMI Criteria Met: Anterior ST elevation is +0.218 mV (threshold: >= +0.200 mV). High suspicion of acute LAD occlusion.
+--------------------------------------------------------------------------------
+4. ELECTROPHYSIOLOGICAL BIOMARKERS & ANATOMICAL LOCALIZATION
+   - Heart Rate (BPM)    : 73.7 BPM (Resting)
+   - QRS Duration (ms)   : 90.0 ms (Ventricular conduction)
+   - Max ST Shift (mV)   : +0.218 mV (Global peak displacement)
+   - Suspected Culprit   : Left Anterior Descending (LAD)
+   - Primary Territory   : Anterior / Septal (LAD)
+   - Regional Ischemia   :
+     * Anterior / Septal (LAD)  : +0.218 mV (Leads: V1, V2, V3, V4)
+     * Inferior (RCA)           : +0.042 mV (Leads: II, III, AVF)
+     * Lateral (LCx)            : +0.089 mV (Leads: I, AVL, V5, V6)
+================================================================================
+REGULATORY NOTICE (FDA SaMD / IEC 62304 Compliance Concept):
+CardioSense is an adjunctive decision-support tool. It does not replace independent
+clinical evaluation by a licensed physician. Emergency pathways must be verified.
+================================================================================
