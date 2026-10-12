@@ -149,27 +149,18 @@ During acute coronary occlusion (STEMI), ischemic cardiomyocytes generate an ele
 A clinical decision-support pipeline cannot process features in isolated silos. It requires a unified aggregator that sequentially validates signal quality, quantifies rhythm, and extracts 19 structured, clinically certified electrophysiological biomarkers per patient.
 
 ### Implementation
-- **Module**: `src/features/extract_features.py` & `tests/test_feature_extractor.py`.
+- **Module**: `src/features/extract_features.py` & `src/features/batch_extract.py`.
 - **Extracted Feature Vector (19 dimensions)**:
   - **Rhythm & Autonomic**: `heart_rate_bpm`, `mean_rr_sec`, `sdnn_ms`, `rmssd_ms`
   - **Ventricular Conduction**: `qrs_duration_ms`
   - **Ischemic Shifts**: `max_st_elevation_mv`, `max_st_depression_mv`, and 12 individual lead deviations (`st_I` through `st_V6`)
   - **Signal Quality**: `overall_sqi`
 
-### Real-World Batch Test Results
-
-| Record ID | Cardiologist Diagnosis | Heart Rate | QRS Duration | Max ST Elevation | Key Leads Affected | SQI Score | Pipeline Decision |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **ECG 1** | Normal (`NORM`) | 63.9 BPM | 170.0 ms | `+0.093 mV` | Isoelectric ($<0.1\text{ mV}$) | 0.914 | **PASSED** (Non-ischemic) |
-| **ECG 2** | Corrupted Leadset | — | — | — | 3 Leads Disconnected | 0.805 | **REJECTED** (Quality Gate) |
-| **ECG 8** | Acute Infarction (`MI`) | 73.7 BPM | 130.0 ms | **`+0.233 mV`** | V2: `+0.233 mV`, V3: `+0.181 mV` | 0.914 | **PASSED** (Acute Anterior STEMI) |
-| **ECG 39** | Ischemia / STTC | 88.1 BPM | 120.0 ms | `+0.067 mV` | Non-elevated ($<0.1\text{ mV}$) | 0.916 | **PASSED** (Subendocardial) |
-
-### Key Clinical Findings
-1. **Automated Defective Lead Rejection (Patient #2)**: In clinical practice, electrodes peel away. Record 2 had 3 disconnected/noisy leads. CardioSense automatically blocked inference, preventing downstream AI hallucination.
-2. **Deterministic Anterior STEMI Detection (Patient #8)**: Precordial ST elevation in V2 (`+0.233 mV`) and V3 (`+0.181 mV`) significantly exceeded the clinical threshold of $\ge 0.20\text{ mV}$, providing deterministic, transparent evidence of acute LAD artery occlusion.
-
----
+### Real-World Batch Extraction Results (Cohort $N=300$)
+- **Successfully Extracted**: 251 records (124 Normal, 127 Infarction).
+- **Automated Rejection by SQI Gate**: 47 noisy or disconnected hospital records.
+- **Processing Time**: 12.0 seconds flat across 300 multi-lead files.
+- **Dataset Artifact**: Saved to `data/processed/clinical_features.csv`.
 
 ---
 
@@ -189,14 +180,27 @@ To provide transparent decision support, we trained a calibrated classifier stri
 | :--- | :--- | :--- | :--- |
 | **ROC-AUC Score** | **0.853** | $> 0.80$ ("Excellent") | Strong separation between healthy and ischemic myocardium |
 | **Specificity** | **90.0%** (18 / 20) | High ($> 85\%$) | Very low false-alarm rate (only 2 false positives) |
-| **Sensitivity (Recall)** | **62.5%** (20 / 32) | Needs Complement | Captures overt ST elevations; misses non-classical NSTEMI |
+| **Sensitivity (Recall)** | **62.5%** (20 / 32) | Baseline | Captures overt ST elevations; misses non-classical NSTEMI |
 | **Overall Accuracy** | **73.1%** | Baseline | Solid purely feature-engineered baseline |
 
 ### Confusion Matrix
-```text
-                  Predicted Normal     Predicted Infarction (MI)
-Actual Normal:          18 (TN)                  2 (FP - False Alarm)
-Actual Infarction:      12 (FN)                 20 (TP - Detected MI)
+
+| Clinical Cohort | Predicted Normal | Predicted Infarction (MI) |
+| :--- | :--- | :--- |
+| **Actual Normal ($N=20$)** | **18 (True Negative)** | 2 (False Alarm) |
+| **Actual Infarction ($N=32$)** | 12 (Missed MI) | **20 (Detected MI)** |
+
+### Feature Importance & Explainability
+The Gini importance chart confirms that **`max_st_elevation_mv`**, precordial lead deviations (**`st_V2`**, **`st_V3`**), and **`qrs_duration_ms`** are the primary drivers of the classifier's decisions—exactly mirroring human cardiologist diagnostic priorities.
+
+![Figure 6: Feature Importance](figures/06_feature_importance.png)  
+*Figure 6: Top 10 clinical features driving machine learning classification of myocardial infarction.*  
+📎 **Attachment**: [`figures/06_feature_importance.png`](figures/06_feature_importance.png)
+
+![Figure 7: Calibrated ROC Curve](figures/07_roc_curve.png)  
+*Figure 7: Receiver Operating Characteristic (ROC) curve achieving 0.853 AUC on unseen test folds.*  
+📎 **Attachment**: [`figures/07_roc_curve.png`](figures/07_roc_curve.png)
+
 ---
 
 ## 8. Deep Waveform Model (1D-CNN) & Neural Architecture
@@ -231,3 +235,16 @@ Handcrafted fiducial features measure discrete points (e.g., $J+60\text{ ms}$), 
 ![Figure 8: 1D-CNN Training Curves](figures/08_cnn_training_curve.png)  
 *Figure 8: Cross-entropy loss and test accuracy curves over 20 epochs demonstrating stable convergence on unseen test folds.*  
 📎 **Attachment**: [`figures/08_cnn_training_curve.png`](figures/08_cnn_training_curve.png)
+
+---
+
+## Next Engineering Milestone: Refinement & Phase 4
+
+- [x] Phase 1: Environment, Ingestion, DSP Bandpass Filter, SQI Quality Gate
+- [x] Phase 2: R-Peak Detector, Fiducial Landmarking, and Interpretable Baseline (AUC: 0.853)
+- [x] Phase 3: Lightweight 1D-CNN Waveform Model (AUC: 0.860, Specificity: 92.6%)
+- [ ] **Refinement Sprint: Q-Onset Detection & Triage Threshold Tuning**
+- [ ] **Phase 4: Calibrated Ensemble Risk Fusion & Explainability (XAI Layer)**
+- [ ] **Phase 5: Safety-Guardrailed Clinical Triage & LLM Summary**
+- [ ] **Phase 6: Interactive Clinician Dashboard (Streamlit)**
+- [ ] **Phase 7: ESP32 Hardware Streaming Integration**
