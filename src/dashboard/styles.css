@@ -1,0 +1,111 @@
+/* CardioSense CDSS - Global Clinical Stylesheet */
+
+/* Remove default Streamlit sidebar completely */
+[data-testid="stSidebar"] {
+    display: none !important;
+}
+
+/* Base app container with smooth transition */
+.stApp {
+    background-color: var(--bg-main) !important;
+    color: var(--text-main) !important;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Header typography */
+.main-title {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 2px;
+}
+
+.subtitle {
+    font-size: 1.0rem;
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+/* Card layout blocks */
+.hub-card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    margin-bottom: 12px;
+}
+
+.hub-card:hover {
+    transform: translateY(-4px);
+    border-color: #38BDF8;
+}
+
+.hub-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.hub-desc {
+    font-size: 0.95rem;
+    opacity: 0.85;
+}
+
+/* Patient profile summary bar */
+.patient-header-card {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    font-size: 1.05rem;
+    margin-bottom: 25px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+}
+
+/* Critical Emergency Flashing Banner */
+@keyframes pulse-danger {
+    0% { opacity: 1.0; transform: scale(1); }
+    50% { opacity: 0.78; transform: scale(1.015); }
+    100% { opacity: 1.0; transform: scale(1); }
+}
+
+.alarm-banner {
+    animation: pulse-danger 1.5s infinite ease-in-out;
+    padding: 18px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 900;
+    background: #DC2626;
+    color: #FFFFFF;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+}
+
+/* Safe / Low Risk Banner */
+.safe-banner {
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1.35rem;
+    font-weight: 800;
+    background: #10B981;
+    color: #FFFFFF;
+    margin-bottom: 20px;
+}
+
+/* Neutral / Intermediate Review Banner */
+.neutral-banner {
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1.35rem;
+    font-weight: 800;
+    background: #64748B;
+    color: #FFFFFF;
+    margin-bottom: 20px;
+}
