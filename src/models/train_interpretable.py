@@ -2,6 +2,7 @@
 CardioSense - Interpretable Baseline Classifier Training
 Trains and calibrates a Random Forest on extracted clinical features
 using official PTB-XL stratified train/test folds (Folds 1-8: Train, 9-10: Test).
+Reports both standard diagnostic and emergency triage operating points.
 """
 
 import sys
@@ -25,6 +26,8 @@ from sklearn.metrics import (
     roc_curve,
 )
 
+from src.features.extract_features import FEATURE_COLUMNS
+
 
 # ---------------------------------------------------------
 # Block 1: Load Clinical Features & Official Folds
@@ -33,13 +36,7 @@ def load_train_test_data(features_csv):
     """Splits data strictly using PTB-XL official benchmark folds."""
     df = pd.read_csv(features_csv)
 
-    feature_cols = [
-        "heart_rate_bpm", "mean_rr_sec", "sdnn_ms", "rmssd_ms", "qrs_duration_ms",
-        "max_st_elevation_mv", "max_st_depression_mv",
-        "st_I", "st_II", "st_III", "st_AVR", "st_AVL", "st_AVF",
-        "st_V1", "st_V2", "st_V3", "st_V4", "st_V5", "st_V6",
-        "overall_sqi",
-    ]
+    feature_cols = [c for c in FEATURE_COLUMNS if c in df.columns]
 
     # Official PTB-XL split: Folds 1-8 for training, Folds 9-10 for testing
     train_df = df[df["strat_fold"] <= 8]
@@ -79,36 +76,54 @@ def train_and_calibrate(X_train, y_train):
 
 
 # ---------------------------------------------------------
-# Block 3: Clinical Performance Evaluation
+# Block 3: Clinical Performance Evaluation (Dual Operating Points)
 # ---------------------------------------------------------
-def evaluate_clinical_metrics(model, X_test, y_test):
-    """Calculates cardiology-focused metrics: Sensitivity, Specificity, AUC."""
-    y_pred = model.predict(X_test)
+def evaluate_clinical_metrics(model, X_test, y_test, triage_threshold=0.35):
+    """
+    Calculates cardiology metrics at two operating thresholds:
+    1. Standard Diagnostic (0.50)
+    2. Emergency Triage (0.35, high-sensitivity rule-out)
+    """
     y_prob = model.predict_proba(X_test)[:, 1]
 
-    acc = accuracy_score(y_test, y_pred)
-    # Sensitivity (Recall): Did we detect actual heart attacks?
-    sensitivity = recall_score(y_test, y_pred, pos_label=1)
-    
-    # Specificity: True Negative Rate (avoiding false hospital alarms)
-    cm = confusion_matrix(y_test, y_pred)
-    tn, fp, fn, tp = cm.ravel()
-    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+    # 1. Standard Diagnostic Threshold (0.50)
+    y_pred_std = (y_prob >= 0.50).astype(int)
+    acc_std = accuracy_score(y_test, y_pred_std)
+    sens_std = recall_score(y_test, y_pred_std, pos_label=1)
+    cm_std = confusion_matrix(y_test, y_pred_std)
+    tn_std, fp_std, fn_std, tp_std = cm_std.ravel()
+    spec_std = tn_std / (tn_std + fp_std) if (tn_std + fp_std) > 0 else 0.0
+
+    # 2. Emergency Triage Screening Threshold (0.35)
+    y_pred_tri = (y_prob >= triage_threshold).astype(int)
+    acc_tri = accuracy_score(y_test, y_pred_tri)
+    sens_tri = recall_score(y_test, y_pred_tri, pos_label=1)
+    cm_tri = confusion_matrix(y_test, y_pred_tri)
+    tn_tri, fp_tri, fn_tri, tp_tri = cm_tri.ravel()
+    spec_tri = tn_tri / (tn_tri + fp_tri) if (tn_tri + fp_tri) > 0 else 0.0
 
     auc = roc_auc_score(y_test, y_prob)
 
-    print("\n" + "=" * 55)
-    print("  CARDIOSENSE INTERPRETABLE MODEL - TEST RESULTS  ")
-    print("=" * 55)
-    print(f"Test Cohort Size       : {len(y_test)} patients (Folds 9-10)")
-    print(f"Accuracy               : {acc * 100:.1f}%")
-    print(f"Sensitivity (Catch MI) : {sensitivity * 100:.1f}%  <-- Most Critical")
-    print(f"Specificity (No False) : {specificity * 100:.1f}%")
-    print(f"ROC-AUC Score          : {auc:.3f}")
-    print("\nConfusion Matrix:")
-    print(f"  [TN: {tn:2d} | FP: {fp:2d}] (True Normal vs False Alarm)")
-    print(f"  [FN: {fn:2d} | TP: {tp:2d}] (Missed MI vs Detected MI)")
-    print("=" * 55)
+    print("\n" + "=" * 65)
+    print("      CARDIOSENSE INTERPRETABLE MODEL - TEST BENCHMARK      ")
+    print("=" * 65)
+    print(f"Test Cohort Size             : {len(y_test)} patients (Official Folds 9-10)")
+    print(f"ROC-AUC Discrimination       : {auc:.3f}")
+    print("-" * 65)
+    print("STANDARD DIAGNOSTIC OPERATING POINT (Threshold = 0.50):")
+    print(f"  Accuracy                   : {acc_std * 100:.1f}%")
+    print(f"  Sensitivity (Catch MI)     : {sens_std * 100:.1f}%")
+    print(f"  Specificity (Rule-out Norm): {spec_std * 100:.1f}%")
+    print(f"  Confusion Matrix           : [TN: {tn_std:2d} | FP: {fp_std:2d}] (True Normal vs False Alarm)")
+    print(f"                               [FN: {fn_std:2d} | TP: {tp_std:2d}] (Missed MI vs Detected MI)")
+    print("-" * 65)
+    print(f"ACUTE EMERGENCY TRIAGE OPERATING POINT (Threshold = {triage_threshold:.2f}):")
+    print(f"  Accuracy                   : {acc_tri * 100:.1f}%")
+    print(f"  Sensitivity (Catch MI)     : {sens_tri * 100:.1f}%  <-- Prioritized for Triage")
+    print(f"  Specificity (Rule-out Norm): {spec_tri * 100:.1f}%")
+    print(f"  Confusion Matrix           : [TN: {tn_tri:2d} | FP: {fp_tri:2d}]")
+    print(f"                               [FN: {fn_tri:2d} | TP: {tp_tri:2d}]")
+    print("=" * 65)
 
     return y_prob, auc
 
@@ -172,8 +187,8 @@ if __name__ == "__main__":
     # 2. Train and calibrate
     rf_base, cal_model = train_and_calibrate(X_tr, y_tr)
 
-    # 3. Evaluate
-    probs, auc_val = evaluate_clinical_metrics(cal_model, X_te, y_te)
+    # 3. Evaluate dual operating points
+    probs, auc_val = evaluate_clinical_metrics(cal_model, X_te, y_te, triage_threshold=0.35)
 
     # 4. Generate Figures 06 & 07
     plot_and_save_figures(rf_base, feat_names, y_te, probs, auc_val, figures_directory)
