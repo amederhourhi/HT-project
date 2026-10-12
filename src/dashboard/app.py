@@ -447,21 +447,36 @@ elif st.session_state["view"] == "results" and st.session_state["active_patient"
         start_s = target_r - int(0.25 * fs)
         end_s = target_r + int(0.40 * fs)
 
-        fig_wave, ax_wave = plt.subplots(figsize=(10, 3.8))
-        ax_wave.plot(time_ax[start_s:end_s], lead_sig[start_s:end_s], color="white" if st.session_state["theme"] == "dark" else "black", linewidth=2.0)
-        ax_wave.scatter(time_ax[lm["base_idx"]], lead_sig[lm["base_idx"]], color="#38BDF8", s=60, label="PR Baseline", zorder=5)
-        ax_wave.scatter(time_ax[lm["q_onset_idx"]], lead_sig[lm["q_onset_idx"]], color="#A855F7", s=60, label="Q-Onset", zorder=5)
-        ax_wave.scatter(time_ax[lm["r_peak_idx"]], lead_sig[lm["r_peak_idx"]], color="#EF4444", s=60, label="R-Peak", zorder=5)
-        ax_wave.scatter(time_ax[lm["s_peak_idx"]], lead_sig[lm["s_peak_idx"]], color="#EC4899", s=60, label="S-Peak", zorder=5)
-        ax_wave.scatter(time_ax[lm["j_point_idx"]], lead_sig[lm["j_point_idx"]], color="#F59E0B", s=60, label="J-Point", zorder=5)
-        ax_wave.scatter(time_ax[lm["st_measure_idx"]], lead_sig[lm["st_measure_idx"]], color="#10B981", s=60, label="ST (J+60ms)", zorder=5)
-        ax_wave.axhline(lead_sig[lm["base_idx"]], color="#38BDF8", linestyle=":", alpha=0.6)
-        ax_wave.set_title(f"Lead {inspect_lead} Beat Landmark Delineation | ST: {lm['st_deviation_mv']:+.3f} mV", fontsize=10)
-        ax_wave.legend(loc="upper right", ncol=6, fontsize=8)
-        ax_wave.grid(True, linestyle="--", alpha=0.3)
-        fig_wave.tight_layout()
-        st.pyplot(fig_wave)
-        plt.close()
+        # lm is None when this beat sits too close to the record edges to
+        # window; the inspector then has nothing honest to draw.
+        if lm is not None:
+            # S trough = deepest sample inside the QRS. Plot-only landmark: the
+            # measurement chain stops at the J point.
+            s_trough = int(np.argmin(lead_sig[lm["q_onset_idx"]:lm["j_point_idx"] + 1])) + lm["q_onset_idx"]
+
+            fig_wave, ax_wave = plt.subplots(figsize=(10, 3.8))
+            ax_wave.plot(time_ax[start_s:end_s], lead_sig[start_s:end_s], color="white" if st.session_state["theme"] == "dark" else "black", linewidth=2.0)
+            ax_wave.scatter(time_ax[lm["baseline_idx"]], lm["baseline_voltage"], color="#38BDF8", s=60, label="PR Baseline", zorder=5)
+            ax_wave.scatter(time_ax[lm["q_onset_idx"]], lead_sig[lm["q_onset_idx"]], color="#A855F7", s=60, label="Q-Onset", zorder=5)
+            ax_wave.scatter(time_ax[target_r], lead_sig[target_r], color="#EF4444", s=60, label="R-Peak", zorder=5)
+            ax_wave.scatter(time_ax[s_trough], lead_sig[s_trough], color="#EC4899", s=60, label="S-Trough", zorder=5)
+            ax_wave.scatter(time_ax[lm["j_point_idx"]], lead_sig[lm["j_point_idx"]], color="#F59E0B", s=60, label="ST @ J (measured)", zorder=5)
+            if lm["st_at_j60_idx"] is not None:
+                j60 = lm["st_at_j60_idx"]
+                ax_wave.scatter(time_ax[j60], lead_sig[j60], color="#94A3B8", s=40, label="J+60 (legacy)", zorder=5)
+            ax_wave.axhline(lm["baseline_voltage"], color="#38BDF8", linestyle=":", alpha=0.6)
+            ax_wave.set_title(
+                f"Lead {inspect_lead} Beat Landmark Delineation | "
+                f"QRS {lm['qrs_duration_ms']:.0f} ms | ST at J: {lm['st_deviation_mv']:+.3f} mV",
+                fontsize=10,
+            )
+            ax_wave.legend(loc="upper right", ncol=6, fontsize=8)
+            ax_wave.grid(True, linestyle="--", alpha=0.3)
+            fig_wave.tight_layout()
+            st.pyplot(fig_wave)
+            plt.close()
+        else:
+            st.info("Selected beat is too close to the edge of the recording to delineate.")
 
     # SBAR Report
     report_text = generate_clinical_report(pt["id"], ens_res, tri_res)

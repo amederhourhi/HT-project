@@ -67,18 +67,24 @@ beat_signal = lead_ii[start_sample:end_sample]
 plt.figure(figsize=(10, 5))
 plt.plot(beat_time, beat_signal, color="black", linewidth=2.0, label="ECG Lead II")
 
-# Landmark markers
-plt.scatter(time_axis[lm["base_idx"]], lead_ii[lm["base_idx"]], color="blue", s=70, zorder=5, label="PR Baseline")
+# Landmark markers. Indices are absolute samples; the baseline dot sits on the
+# isoelectric level so the plot shows both where and at what voltage the
+# reference was taken.
+plt.scatter(time_axis[lm["baseline_idx"]], lm["baseline_voltage"], color="blue", s=70, zorder=5, label="PR Baseline")
 plt.scatter(time_axis[lm["q_onset_idx"]], lead_ii[lm["q_onset_idx"]], color="darkturquoise", s=70, zorder=5, label="Q-Onset")
-plt.scatter(time_axis[lm["r_peak_idx"]], lead_ii[lm["r_peak_idx"]], color="red", s=70, zorder=5, label="R-Peak")
-plt.scatter(time_axis[lm["s_peak_idx"]], lead_ii[lm["s_peak_idx"]], color="purple", s=70, zorder=5, label="S-Peak")
-plt.scatter(time_axis[lm["j_point_idx"]], lead_ii[lm["j_point_idx"]], color="darkorange", s=70, zorder=5, label="J-Point")
-plt.scatter(time_axis[lm["st_measure_idx"]], lead_ii[lm["st_measure_idx"]], color="green", s=70, zorder=5, label="ST (J + 60ms)")
+plt.scatter(time_axis[target_beat_r], lead_ii[target_beat_r], color="red", s=70, zorder=5, label="R-Peak")
+s_trough = int(np.argmin(lead_ii[lm["q_onset_idx"]:lm["j_point_idx"] + 1])) + lm["q_onset_idx"]
+plt.scatter(time_axis[s_trough], lead_ii[s_trough], color="purple", s=70, zorder=5, label="S-Trough")
+plt.scatter(time_axis[lm["j_point_idx"]], lead_ii[lm["j_point_idx"]], color="darkorange", s=70, zorder=5, label="ST @ J (measured)")
+if lm["st_at_j60_idx"] is not None:
+    plt.scatter(time_axis[lm["st_at_j60_idx"]], lead_ii[lm["st_at_j60_idx"]],
+                color="grey", s=45, zorder=5, label="J+60 (legacy)")
 
 # Isoelectric reference line
-plt.axhline(lead_ii[lm["base_idx"]], color="blue", linestyle=":", alpha=0.6, label="Isoelectric Level")
+plt.axhline(lm["baseline_voltage"], color="blue", linestyle=":", alpha=0.6, label="Isoelectric Level")
 
-plt.title(f"CardioSense Fiducial Landmarks | QRS: {lm['qrs_duration_ms']} ms | ST: {lm['st_deviation_mv']:+.3f} mV", fontsize=12, fontweight="bold")
+plt.title(f"CardioSense Fiducial Landmarks | QRS: {lm['qrs_duration_ms']} ms | "
+          f"ST at J: {lm['st_deviation_mv']:+.3f} mV", fontsize=12, fontweight="bold")
 plt.xlabel("Time (seconds)", fontsize=10)
 plt.ylabel("mV", fontsize=10)
 plt.grid(True, linestyle="--", alpha=0.5)

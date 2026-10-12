@@ -17,6 +17,13 @@ from src.features.fiducials import analyze_12lead_features
 # Block 1: Standardized Feature Column Names
 # ---------------------------------------------------------
 # Ordered list of clinical biomarkers for the interpretable classifier (23 features)
+#
+# ST convention: every ST column below is measured at the J point against the
+# isoelectric PR segment, which is how the AHA/ACC criteria this project applies
+# define ST deviation. The legacy J+60 readings are still extracted, but only as
+# the trailing LEGACY_COLUMNS - deliberately outside FEATURE_COLUMNS, so
+# switching the measurement convention does not silently change the trained
+# classifier's input contract part-way through the hardening sprint.
 FEATURE_COLUMNS = [
     # Rhythm & Autonomic features
     "heart_rate_bpm",
@@ -32,7 +39,7 @@ FEATURE_COLUMNS = [
     "st_anterior_max",  # LAD territory (V1, V2, V3, V4)
     "st_inferior_max",  # RCA territory (II, III, aVF)
     "st_lateral_max",   # LCx territory (I, aVL, V5, V6)
-    # Per-lead ST deviation (12 leads)
+    # Per-lead ST deviation at the J point (12 leads)
     "st_I",
     "st_II",
     "st_III",
@@ -48,6 +55,13 @@ FEATURE_COLUMNS = [
     # Signal quality score
     "overall_sqi",
 ]
+
+# Audit-only columns. Emitted in the dataset so the new convention can be
+# compared against the old one and a suspect delineation can be traced, but they
+# are not inputs to the interpretable classifier.
+LEGACY_COLUMNS = [f"st_j60_{lead}" for lead in
+                  ["I", "II", "III", "AVR", "AVL", "AVF", "V1", "V2", "V3", "V4", "V5", "V6"]]
+DIAGNOSTIC_COLUMNS = ["beats_used", "qrs_plausible"]
 
 
 # ---------------------------------------------------------
@@ -93,15 +107,33 @@ def extract_clinical_features(raw_signals, fs=100.0, lead_names=None):
 
     # 5. Extract 12-lead fiducial landmarks (ST deviations & QRS duration)
     landmarks = analyze_12lead_features(cleaned_signals, r_peaks, lead_names=lead_names, fs=fs)
-    st_by_lead = landmarks["st_by_lead"]
+
+    if landmarks["status"] == "rejected":
+        return {
+            "status": "rejected",
+            "reason": f"Delineation failed: {landmarks['reason']}",
+            "sqi_details": sqi_result,
+            "features": None,
+        }
+
+    st_by_lead = landmarks["st_by_lead"]          # ST at the J point
+    st_details = landmarks["st_details"]          # both conventions + plausibility
 
     # 6. Anatomical Coronary Artery Territory Maximums
+    # Only leads the delineator vouches for can contribute. Without that filter a
+    # single failed lead would report a plausible-looking territory maximum, and
+    # the deterministic guardrails would escalate on a measurement artefact.
+    def territory_max(leads):
+        trusted = [st_by_lead[ld] for ld in leads
+                   if ld in st_by_lead and st_details.get(ld, {}).get("plausible", False)]
+        return max(trusted) if trusted else 0.0
+
     # LAD (Left Anterior Descending) territory: V1-V4
-    st_anterior_max = max(st_by_lead.get(ld, 0.0) for ld in ["V1", "V2", "V3", "V4"])
+    st_anterior_max = territory_max(["V1", "V2", "V3", "V4"])
     # RCA (Right Coronary Artery) territory: II, III, aVF
-    st_inferior_max = max(st_by_lead.get(ld, 0.0) for ld in ["II", "III", "AVF"])
+    st_inferior_max = territory_max(["II", "III", "AVF"])
     # LCx (Left Circumflex) territory: I, aVL, V5, V6
-    st_lateral_max = max(st_by_lead.get(ld, 0.0) for ld in ["I", "AVL", "V5", "V6"])
+    st_lateral_max = territory_max(["I", "AVL", "V5", "V6"])
 
     # 7. Assemble into structured clinical feature dictionary
     features = {
@@ -116,16 +148,24 @@ def extract_clinical_features(raw_signals, fs=100.0, lead_names=None):
         "st_inferior_max": round(float(st_inferior_max), 3),
         "st_lateral_max": round(float(st_lateral_max), 3),
         "overall_sqi": sqi_result["overall_sqi"],
+        # Delineation diagnostics
+        "beats_used": landmarks["beats_used"],
+        "qrs_plausible": landmarks["qrs_plausible"],
     }
 
-    # Add each individual lead's ST deviation
+    # Per-lead ST deviation at the J point (the guideline convention)
     for lead in lead_names:
-        key = f"st_{lead.upper()}"
-        features[key] = st_by_lead.get(lead, 0.0)
+        features[f"st_{lead.upper()}"] = st_by_lead.get(lead, 0.0)
+
+    # Legacy J+60 readings, kept for convention comparison only
+    for lead in lead_names:
+        reading = st_details.get(lead) or {}
+        features[f"st_j60_{lead.upper()}"] = reading.get("st_at_j60_mv")
 
     return {
         "status": "success",
         "reason": "OK",
         "sqi_details": sqi_result,
+        "st_details": st_details,
         "features": features,
     }

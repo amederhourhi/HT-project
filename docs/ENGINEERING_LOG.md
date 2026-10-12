@@ -387,7 +387,7 @@ The healthy-class rate is statistically indistinguishable between the train and 
 
 - **Section 9, "Standard Specificity 100.0% (20 / 20) — Zero false alarms on normal healthy controls."** Correct for the fused ensemble in isolation; **incorrect for the shipped cascade**. 5 of those same 20 healthy controls are escalated to `TIER_3_ESCALATION`.
 - **Section 10 / Milestones, "100% Guardrail Verification."** The verification covered 2 records. Coverage is now 251, and the outcome is materially worse than the demonstration implied.
-- **Section 10, Patient 8 escalation.** Still correct and still desirable: this audit is about not escalating *healthy* patients, not about withdrawing the override that caught `00008_lr`.
+- **Section 10, Patient 8 escalation.** Asserted here as "still correct and still desirable". **Withdrawn in Section 12:** `00008_lr` carries no ST-elevation annotation and escalated only through the J+60 measurement artifact, so it never demonstrated a guardrail catching an injury current.
 
 Any future specificity or sensitivity figure in this log must state whether it is measured at the engine, the fusion, or the post-guardrail cascade. These are three different systems.
 
@@ -408,6 +408,129 @@ The second command exits non-zero today (25.8% against a 5% budget). That is int
 
 Rewrite Guardrail 1 against the contiguous-lead criteria with sex- and age-specific V2–V3 cut-points, add the aVR and ST-depression patterns that currently have no rule at all, and give each rule a stable `rule_id` so escalations can be attributed programmatically instead of by reading report prose. Healthy-class escalation target: below 5% at the `--fail-above 0.05` gate, with Patient 8 still escalated.
 
+*Superseded by Section 12 on two premises:* the agreed healthy-escalation budget is **below 10%**, and `00008_lr` is no longer an acceptance case — its escalation turned out to be the measurement artifact that Section 12 removes. The contiguous-lead rewrite remains exactly as specified.
+
+---
+
+## 12. ST Measurement Rebuilt at the J Point (Hardening Sprint P0-3)
+
+### Why This Section Exists
+
+Section 11 established that the deterministic layer escalated 25.8% of healthy ECGs, and it attributed that to two rule-level defects: single-lead triggering and one flat precordial threshold. Both diagnoses were correct, and neither was the main cause.
+
+Before changing a single threshold, the measurement itself was checked against the convention the criteria are written in. The Fourth Universal Definition of MI specifies its ST cut-points **at the J point**, referenced to the **isoelectric PR segment**. The extractor measured at **J+60 ms**, referenced to a **single sample 60 ms before the R peak**, with the J point itself approximated as "S trough + 30 ms". On a normal heart with an upsloping ST segment, J+60 is systematically higher than J, so the rules were being fed a number that is not the quantity the threshold refers to.
+
+The consequence was measured, not argued: **the same rules, unchanged, escalate 3.2% of healthy records instead of 25.8% once the ST interval is measured the way the guideline defines it.** No threshold was moved to obtain that figure.
+
+### What Changed
+
+| Module | Change |
+| :--- | :--- |
+| `src/features/fiducials.py` | Rewritten. Per-lead median beat with ectopic rejection, global QRS bounds from a multi-lead energy envelope, flattest-window PR baseline kept clear of the QRS, ST reported at both J and J+60, per-lead plausibility flags. |
+| `src/features/extract_features.py` | Propagates delineation rejection instead of raising, computes territory maxima only from leads flagged plausible, emits `st_details`, `beats_used`, `qrs_plausible` and the legacy `st_j60_*` columns. |
+| `src/features/batch_extract.py` | Drop-outs classified by reason: a crash is reported as a bug, not silently counted as a quality rejection. |
+| `src/data/download_ptbxl.py` | Cohort manifest rebuilt from committed inputs; the frozen id list moved to its own file; implausible ages set to unknown. |
+| `src/dashboard/app.py`, `tests/test_fiducials.py` | Waveform inspector repaired to the new landmark contract, which had silently broken. |
+| `data/processed/clinical_features.csv` | Regenerated at 251 records. `st_*` is now the J-point reading; the J+60 values survive as `st_j60_*` for comparison. |
+
+### The Convention Defect, Quantified
+
+Mean ST deviation over the 124 healthy (NORM) records, by lead:
+
+| Lead | At J (guideline) | At J+60 (previous) | Offset |
+| :--- | :--- | :--- | :--- |
+| I | −0.000 | +0.024 | +0.024 |
+| II | +0.003 | +0.026 | +0.023 |
+| III | +0.003 | +0.002 | −0.000 |
+| aVR | −0.002 | −0.025 | −0.023 |
+| aVL | −0.002 | +0.011 | +0.013 |
+| aVF | +0.003 | +0.014 | +0.011 |
+| V1 | +0.032 | +0.054 | +0.022 |
+| **V2** | **+0.062** | **+0.137** | **+0.076** |
+| **V3** | **+0.037** | **+0.117** | **+0.080** |
+| **V4** | **+0.006** | **+0.067** | **+0.061** |
+| V5 | −0.006 | +0.033 | +0.040 |
+| V6 | −0.006 | +0.015 | +0.022 |
+
+At the J point the limb leads average within $\pm0.003$ mV of the isoelectric line, which is what a healthy reference population should show. At J+60 the precordial leads sit up to $+0.137$ mV, and V2/V3 alone cross the 0.20 mV cut-point in **28 of 124 healthy records (22.6%)** versus **2 of 124 (1.6%)** at J. Mean maximum ST deviation per healthy record: 0.149 mV at J+60 against 0.074 mV at J.
+
+### Attribution: Measurement, Not Criteria
+
+| Configuration | Healthy escalated | Infarction escalated |
+| :--- | :--- | :--- |
+| Shipped rules, J+60 measurement (Section 11) | **25.8%** (32/124) [18.9%, 34.2%] | 45.7% (58/127) |
+| Shipped rules, J-point measurement | **3.2%** (4/124) [1.3%, 8.0%] | 32.3% (41/127) |
+| Guideline contiguous-lead criteria, J-point measurement *(P0-2 preview)* | 1.6% (2/124) | 18.9% (24/127) |
+
+Two things follow, and the second is uncomfortable. The healthy-escalation problem was overwhelmingly a measurement problem: the criteria rewrite that Section 11 proposed would have spent a sprint tuning margins against a number that was wrong in the first place. And the infarction column moved the same direction — 45.7% to 32.3% — which means part of the layer's apparent sensitivity was bought with the same artifact that produced its false alarms. A guardrail that escalates everything is not sensitive; it is uninformative.
+
+The four remaining healthy escalations under the shipped rules are `552` and `3711` on anterior ST, `9427` on QRS 140 ms, and `10231` on HR 140.3 BPM with QRS 160 ms. Only two are ST-driven.
+
+### QRS Boundary Calibration
+
+The QRS onset/offset is found on the smoothed, summed squared-derivative energy envelope across leads, at the point where that envelope falls below a fixed share of its own peak. Expressing the threshold as a *share of the peak* makes it scale with R-wave amplitude, so a tall R hides a slow terminal deflection and the boundary lands inside the QRS. The value was set on cohort evidence:
+
+| `QRS_ENERGY_FRACTION` | QRS mean / median | Healthy ST bias (V4, V5) | Healthy escalated | Infarction retained |
+| :--- | :--- | :--- | :--- | :--- |
+| 0.060 (first cut) | 81.6 / 80 ms | −0.015, −0.016 mV | 1.6% | 15.7% |
+| 0.030 | 88.4 / 80 ms | −0.004, −0.010 mV | 2.4% | 17.3% |
+| **0.015 (shipped)** | **97.4 / 90 ms** | **+0.006, −0.006 mV** | **1.6%** | **18.9%** |
+| 0.008 | 105.0 / 100 ms | +0.011, −0.005 mV | 2.4% | 20.5% |
+
+Shipped at 0.015: it is the only setting that puts QRS duration on the published adult normal (~90–100 ms) *and* removes the spurious precordial ST-depression pattern *without* spending a healthy false positive or an infarction. 0.008 retains two more infarctions but over-reads duration (p95 = 160 ms) and begins picking up the T wave. The earlier 6% setting under-read the QRS by roughly 16 ms on average and left a fake anterior depression in the healthy mean profile.
+
+### Guards Against Delineation Failure
+
+Section 11 finding 4 — 12 records reporting a physiologically impossible 30–40 ms QRS — is closed structurally rather than by filtering the output:
+
+- **Ectopic beats are excluded** from the median beat (RR deviating > 20% from the record median), so a PVC cannot define the morphology. `beats_used` is reported per record: min 3, median 11, max 21.
+- **`qrs_plausible`** is false outside 50–220 ms (2 records, both genuine wide-QRS conduction disease at the ceiling).
+- **Per-lead `plausible`** is false outside $\pm1.0$ mV, and territory maxima are computed only from plausible leads, so a delineation failure on one lead cannot manufacture injury current in a territory.
+- **`extract_clinical_features` propagates rejection** when the delineator cannot produce boundaries, instead of raising a `KeyError` that the batch loop would have counted as a quality rejection.
+- **Age sentinels are neutralised at the source**: `ecg_id 18636` carries age 300 in PTB-XL. It is now written as unknown, and the cut-point function must handle unknown age explicitly rather than silently take the "men aged $\ge 40$" branch.
+
+### Cohort Reproducibility
+
+The cohort is now reconstructible from tracked inputs alone: `data/processed/cohort_ecg_ids.csv` (251 frozen ids) → `cohort_manifest.csv` → `clinical_features.csv`. Reconstructing it against the committed dataset reproduced **251/251** records on label, fold, age and sex.
+
+The pin was moved out of `clinical_features.csv`, which the previous code read back as its own source of truth — a circular dependency in which one extra gate rejection would have quietly shrunk the cohort and moved the denominator under every published figure.
+
+### Limitations and Corrections
+
+**1. There is no acute-injury ground truth in this cohort.** Exactly one record carries `infarction_stadium1 = Stadium I` (`00532`, an inferior injury pattern at II +0.206 / III +0.277 / aVF +0.245 mV that meets all three contiguous inferior pairs). STEMI sensitivity therefore cannot be measured on this cohort, and the 18.9% infarction retention above is not a miss rate: the infarction label is dominated by chronic (Stadium III) and aneurysm patterns, which are precisely the records that should *not* trigger a cath-lab activation.
+
+**2. 100 Hz quantises the J point to $\pm10$ ms.** On a steep terminal QRS deflection that is worth tens of microvolts — comparable to the 100 µV diagnostic margin. PTB-XL ships 500 Hz records (`filename_hr`); resolving the J point to the millisecond requires them.
+
+**3. The pinned cohort is gate survivors, not a random sample.** The original sampling rule is unrecoverable, and the ~300 records referenced in Section 6 were reduced to the 251 that passed the quality gate. The NORM/infarction mix is therefore conditioned on signal quality, which is a selection effect on every rate in this section.
+
+**4. aVR and posterior rules are not free.** Adding aVR $\ge 0.10$ mV and a crude V1–V3 depression proxy to the guideline criteria raises healthy escalation from 1.6% to 8.9%. Both need stricter definitions (reciprocal-change pairing, ST/S ratio) before they earn their place in P0-2.
+
+**5. Section 11's Patient 8 verification was wrong, and so was my claim about it.** `00008_lr` is annotated `{'IMI': 35.0, 'ABQRS': 0.0, 'SR': 0.0}` — an inferior infarct with an abnormal QRS, **no ST-elevation code at all**. Under the corrected measurement its ST at J is between $-0.06$ and $+0.05$ mV. It escalated under Section 10 exclusively on the J+60 artifact, and the dashboard advertises it as an "anterior STEMI / LAD occlusion" demo case, which it is not. Section 11's third correction bullet ("Still correct and still desirable") is withdrawn.
+
+A defensible demonstration case exists in the cohort: `00544` (held-out fold 9, V2 +0.294 / V3 +0.363 / V4 +0.545 with inferior involvement) for anterior injury, and `00532` for the acute Stadium I pattern. Both still need to be copied into the tracked `data/samples/` tree before the dashboard can ship them, since `data/cohort/` is gitignored.
+
+### Reproduction
+
+```bash
+# Rebuild the cohort from the tracked pin (waveforms download on first run)
+python src/data/download_ptbxl.py --cohort
+
+# Regenerate the feature dataset (251 records, ~10 s)
+python src/features/batch_extract.py
+
+# Re-audit the shipped guardrails against it
+python src/evaluation/score_guardrails.py --scope all
+
+# Regenerate the landmark verification figure (docs/figures/05_beat_landmarks.png)
+MPLBACKEND=Agg python tests/test_fiducials.py
+```
+
+The guardrail audit now passes at the agreed budget without any change to the rules. The P0-2 acceptance gate remains `--fail-above 0.10`.
+
+### Next (P0-2)
+
+Rewrite Guardrail 1 against contiguous-lead criteria with sex- and age-specific V2–V3 cut-points, consuming per-lead `st_details` rather than territory maxima, gating on `qrs_plausible`, and emitting stable `rule_id`s with `ESCALATE`/`REVIEW` severities. The measurement fix makes those criteria meaningful; it does not implement them.
+
 ---
 
 ## Engineering Milestones
@@ -419,8 +542,8 @@ Rewrite Guardrail 1 against the contiguous-lead criteria with sex- and age-speci
 - [x] Phase 4: Calibrated Ensemble Risk Fusion & Explainability (Ensemble AUC: 0.897)
 - [x] Phase 5: Safety-Guardrailed Clinical Triage & SBAR Clinical Reports (2-record demonstration)
 - [x] **Hardening Sprint P0-1: Guardrail Layer Audit — population verification, $N = 251$ (Section 11)**
-- [ ] **Hardening Sprint P0-2: Contiguous-lead STEMI criteria (target: healthy escalation < 5%)**
-- [ ] **Hardening Sprint P0-3: Rebuild QRS/ST delineation and guard physiologically impossible measurements**
+- [x] **Hardening Sprint P0-3: ST measured at the J point against a PR-segment baseline; QRS/ST plausibility guards; cohort reproducible from tracked inputs — healthy escalation 25.8% → 3.2% with the rules unchanged (Section 12)**
+- [ ] **Hardening Sprint P0-2: Contiguous-lead STEMI criteria (target: healthy escalation < 10%)**
 - [ ] **Hardening Sprint P0-4: Comparable dual-engine cohorts and reconciled benchmark metrics**
 - [ ] **Hardening Sprint P0-5: Traceable SBAR report and a single source of truth for triage tiers**
 - [ ] **Phase 6: Interactive Clinician Dashboard (Streamlit)**
