@@ -67,7 +67,11 @@ def load_grouped_cohort():
                 records.append({
                     "ecg_id": f"{int(r['ecg_id']):05d}",
                     "path": str(record_base),
-                    "age": int(r["age"]) if pd.notnull(r.get("age")) else 55,
+                    # None, not a placeholder: age selects the V2-V3 ST cut-point,
+                    # so inventing 55 would relax a threshold for patients whose
+                    # paperwork is missing. The engine holds those leads to the most
+                    # sensitive value and records that it did.
+                    "age": int(r["age"]) if pd.notnull(r.get("age")) else None,
                     "gender": "Male" if r.get("sex") == 0.0 else ("Female" if r.get("sex") == 1.0 else "N/A"),
                     "category": category_name,
                 })
@@ -307,7 +311,7 @@ elif st.session_state["view"] == "library":
                 f"""
                 <div class='hub-card' style='padding: 14px; margin-bottom: 8px;'>
                     <b>Patient #{case['ecg_id']}</b><br>
-                    <span style='font-size:0.9rem;'>Age: <b>{case['age']}</b> | Gender: <b>{case['gender']}</b></span>
+                    <span style='font-size:0.9rem;'>Age: <b>{case['age'] if case['age'] is not None else 'unknown'}</b> | Gender: <b>{case['gender']}</b></span>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -334,7 +338,11 @@ elif st.session_state["view"] == "results" and st.session_state["active_patient"
     fs = fields["fs"]
     lead_names = fields["sig_name"]
 
-    ens_res = ensemble.predict(raw_signals, fs=fs, lead_names=lead_names)
+    # Demographics travel with the signal: the ST criterion for V2-V3 depends on
+    # both, and without them the guardrails must fall back to the most sensitive
+    # cut-point. Gender strings ("Male"/"Female"/"N/A") are normalised by the engine.
+    ens_res = ensemble.predict(raw_signals, fs=fs, lead_names=lead_names,
+                               age=pt["age"], sex=pt["gender"])
 
     if ens_res["status"] == "rejected":
         st.markdown("<div class='alarm-banner'>🚨 SIGNAL REJECTED: DISCONNECTED ELECTRODE</div>", unsafe_allow_html=True)
@@ -362,7 +370,7 @@ elif st.session_state["view"] == "results" and st.session_state["active_patient"
         <div class='patient-header-card'>
             <div>👤 <b>Patient:</b> {pt['name']}</div>
             <div>🆔 <b>ID:</b> {pt['id']}</div>
-            <div>🎂 <b>Age:</b> {pt['age']} yrs</div>
+            <div>🎂 <b>Age:</b> {pt['age'] if pt['age'] is not None else 'unknown'} yrs</div>
             <div>⚧ <b>Gender:</b> {pt['gender']}</div>
             <div>📋 <b>Intake:</b> {pt['status']}</div>
         </div>
@@ -371,8 +379,10 @@ elif st.session_state["view"] == "results" and st.session_state["active_patient"
     )
 
     if tri_res["override_active"]:
+        # The severity word matters more than the count: a blocked QRS and a STEMI
+        # pattern both fire a guardrail, and only one of them activates the cath lab.
         st.warning(
-            f"⚠️ **DETERMINISTIC CLINICAL SAFETY OVERRIDE ACTIVE**  \n"
+            f"⚠️ **DETERMINISTIC CLINICAL GUARDRAIL — {tri_res['highest_severity']} FINDING**  \n"
             + "\n".join([f"- {r}" for r in tri_res["override_reasons"]])
         )
 

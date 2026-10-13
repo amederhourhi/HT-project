@@ -1,0 +1,1749 @@
+{
+  "scope": "all",
+  "n_records": 251,
+  "per_class": {
+    "normal": {
+      "n": 124,
+      "escalated": 3,
+      "rate": 0.024193548387096774,
+      "ci95_low": 0.008261469015465255,
+      "ci95_high": 0.068721297157674
+    },
+    "infarction": {
+      "n": 127,
+      "escalated": 27,
+      "rate": 0.2125984251968504,
+      "ci95_low": 0.15042374107946094,
+      "ci95_high": 0.2916497279089954
+    }
+  },
+  "per_rule": {
+    "G1_CONTIGUOUS_STE": {
+      "records": 26,
+      "normal": 2,
+      "infarction": 24
+    },
+    "G3_WIDE_QRS": {
+      "records": 21,
+      "normal": 2,
+      "infarction": 19
+    },
+    "G2_SEVERE_TACHYCARDIA": {
+      "records": 6,
+      "normal": 1,
+      "infarction": 5
+    }
+  },
+  "false_escalations": [
+    {
+      "ecg_id": 552,
+      "strat_fold": 1,
+      "rule_ids": [
+        "G1_CONTIGUOUS_STE",
+        "G1_CONTIGUOUS_STE"
+      ],
+      "reasons": [
+        "[G1_CONTIGUOUS_STE (ESCALATE)] STEMI criteria met in contiguous leads V2/V3: +0.275 mV and +0.302 mV (cut-points: men >= 40 y in V2: >= 0.20 mV; men >= 40 y in V3: >= 0.20 mV). High suspicion of acute LAD occlusion.",
+        "[G1_CONTIGUOUS_STE (ESCALATE)] STEMI criteria met in contiguous leads V3/V4: +0.302 mV and +0.210 mV (cut-points: men >= 40 y in V3: >= 0.20 mV; generic >= 0.10 mV). High suspicion of acute LAD occlusion."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.302,
+        "st_inferior_max": 0.099,
+        "st_lateral_max": 0.058,
+        "heart_rate_bpm": 78.8,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 59.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 3711,
+      "strat_fold": 7,
+      "rule_ids": [
+        "G1_CONTIGUOUS_STE"
+      ],
+      "reasons": [
+        "[G1_CONTIGUOUS_STE (ESCALATE)] STEMI criteria met in contiguous leads V3/V4: +0.288 mV and +0.137 mV (cut-points: men < 40 y in V3: >= 0.25 mV; generic >= 0.10 mV). High suspicion of acute LAD occlusion."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.288,
+        "st_inferior_max": 0.028,
+        "st_lateral_max": 0.037,
+        "heart_rate_bpm": 55.3,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 34.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 10231,
+      "strat_fold": 6,
+      "rule_ids": [
+        "G2_SEVERE_TACHYCARDIA",
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G2_SEVERE_TACHYCARDIA (ESCALATE)] Heart rate 140.3 bpm exceeds the emergency threshold (> 130 bpm): impaired diastolic filling and demand-ischaemia risk.",
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 160.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.058,
+        "st_inferior_max": -0.086,
+        "st_lateral_max": 0.016,
+        "heart_rate_bpm": 140.3,
+        "qrs_duration_ms": 160.0,
+        "leads_trusted": 12.0,
+        "age": 75.0,
+        "sex": 1.0
+      }
+    }
+  ],
+  "unescalated_infarctions": [
+    {
+      "ecg_id": 146,
+      "strat_fold": 7,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.09,
+        "st_inferior_max": 0.042,
+        "st_lateral_max": -0.039,
+        "heart_rate_bpm": 79.1,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 45.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 177,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.191,
+        "st_inferior_max": -0.042,
+        "st_lateral_max": 0.043,
+        "heart_rate_bpm": 94.3,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 73.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 266,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.136,
+        "st_inferior_max": 0.06,
+        "st_lateral_max": 0.092,
+        "heart_rate_bpm": 72.4,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 81.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 968,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.058,
+        "st_inferior_max": 0.002,
+        "st_lateral_max": -0.008,
+        "heart_rate_bpm": 68.0,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 79.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 1415,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.06,
+        "st_inferior_max": 0.003,
+        "st_lateral_max": 0.023,
+        "heart_rate_bpm": 67.3,
+        "qrs_duration_ms": 70.0,
+        "leads_trusted": 12.0,
+        "age": 48.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 1447,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.061,
+        "st_inferior_max": -0.011,
+        "st_lateral_max": 0.006,
+        "heart_rate_bpm": 74.4,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 64.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 1675,
+      "strat_fold": 2,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.093,
+        "st_inferior_max": 0.042,
+        "st_lateral_max": 0.026,
+        "heart_rate_bpm": 67.6,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 81.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 1737,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.046,
+        "st_inferior_max": 0.085,
+        "st_lateral_max": 0.002,
+        "heart_rate_bpm": 66.2,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 67.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 2118,
+      "strat_fold": 3,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.102,
+        "st_inferior_max": -0.004,
+        "st_lateral_max": 0.018,
+        "heart_rate_bpm": 53.6,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 51.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 2457,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.215,
+        "st_inferior_max": 0.025,
+        "st_lateral_max": -0.016,
+        "heart_rate_bpm": 93.1,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 65.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 2485,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.199,
+        "st_inferior_max": 0.084,
+        "st_lateral_max": -0.085,
+        "heart_rate_bpm": 90.4,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 65.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 2656,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.058,
+        "st_inferior_max": -0.024,
+        "st_lateral_max": -0.008,
+        "heart_rate_bpm": 102.2,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 81.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 2742,
+      "strat_fold": 4,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 130.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": -0.008,
+        "st_inferior_max": 0.019,
+        "st_lateral_max": 0.005,
+        "heart_rate_bpm": 86.0,
+        "qrs_duration_ms": 130.0,
+        "leads_trusted": 12.0,
+        "age": 74.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 3039,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.429,
+        "st_inferior_max": 0.1,
+        "st_lateral_max": -0.098,
+        "heart_rate_bpm": 66.7,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 63.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 3309,
+      "strat_fold": 1,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.151,
+        "st_inferior_max": 0.024,
+        "st_lateral_max": 0.009,
+        "heart_rate_bpm": 60.9,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 66.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 3600,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.096,
+        "st_inferior_max": 0.048,
+        "st_lateral_max": 0.038,
+        "heart_rate_bpm": 70.6,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 60.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 3668,
+      "strat_fold": 8,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.11,
+        "st_inferior_max": 0.015,
+        "st_lateral_max": -0.013,
+        "heart_rate_bpm": 62.6,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 52.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 3987,
+      "strat_fold": 1,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.036,
+        "st_inferior_max": 0.019,
+        "st_lateral_max": -0.019,
+        "heart_rate_bpm": 87.2,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 71.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 4009,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.037,
+        "st_inferior_max": 0.034,
+        "st_lateral_max": -0.034,
+        "heart_rate_bpm": 83.3,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 65.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 4072,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.105,
+        "st_inferior_max": -0.015,
+        "st_lateral_max": 0.036,
+        "heart_rate_bpm": 63.1,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 81.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 4143,
+      "strat_fold": 2,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.041,
+        "st_inferior_max": -0.014,
+        "st_lateral_max": -0.011,
+        "heart_rate_bpm": 97.0,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 79.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 4375,
+      "strat_fold": 8,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.072,
+        "st_inferior_max": 0.031,
+        "st_lateral_max": 0.026,
+        "heart_rate_bpm": 70.4,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 47.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 4470,
+      "strat_fold": 4,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 150.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.121,
+        "st_inferior_max": 0.065,
+        "st_lateral_max": 0.028,
+        "heart_rate_bpm": 79.1,
+        "qrs_duration_ms": 150.0,
+        "leads_trusted": 12.0,
+        "age": 68.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 5221,
+      "strat_fold": 1,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.097,
+        "st_inferior_max": -0.017,
+        "st_lateral_max": 0.008,
+        "heart_rate_bpm": 68.6,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 62.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 5327,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.052,
+        "st_inferior_max": -0.022,
+        "st_lateral_max": -0.001,
+        "heart_rate_bpm": 75.8,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 53.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 5349,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.068,
+        "st_inferior_max": 0.021,
+        "st_lateral_max": -0.008,
+        "heart_rate_bpm": 68.0,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 74.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 5543,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.084,
+        "st_inferior_max": 0.032,
+        "st_lateral_max": 0.025,
+        "heart_rate_bpm": 90.9,
+        "qrs_duration_ms": 70.0,
+        "leads_trusted": 12.0,
+        "age": 81.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 5957,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.097,
+        "st_inferior_max": 0.024,
+        "st_lateral_max": -0.026,
+        "heart_rate_bpm": 83.7,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 75.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 5958,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.131,
+        "st_inferior_max": 0.022,
+        "st_lateral_max": 0.006,
+        "heart_rate_bpm": 78.2,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 49.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 6186,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.007,
+        "st_inferior_max": -0.001,
+        "st_lateral_max": -0.01,
+        "heart_rate_bpm": 74.3,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 57.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 6280,
+      "strat_fold": 7,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.034,
+        "st_inferior_max": 0.062,
+        "st_lateral_max": -0.074,
+        "heart_rate_bpm": 89.6,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 53.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 6527,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.066,
+        "st_inferior_max": 0.013,
+        "st_lateral_max": -0.001,
+        "heart_rate_bpm": 62.7,
+        "qrs_duration_ms": 70.0,
+        "leads_trusted": 12.0,
+        "age": 59.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 6702,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.068,
+        "st_inferior_max": 0.03,
+        "st_lateral_max": 0.003,
+        "heart_rate_bpm": 99.7,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 76.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 6715,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.006,
+        "st_inferior_max": 0.056,
+        "st_lateral_max": 0.001,
+        "heart_rate_bpm": 69.9,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 80.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 7048,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.087,
+        "st_inferior_max": 0.033,
+        "st_lateral_max": 0.03,
+        "heart_rate_bpm": 57.6,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 54.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 7537,
+      "strat_fold": 1,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.17,
+        "st_inferior_max": -0.025,
+        "st_lateral_max": 0.074,
+        "heart_rate_bpm": 94.1,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 74.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 7601,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.056,
+        "st_inferior_max": -0.021,
+        "st_lateral_max": -0.004,
+        "heart_rate_bpm": 84.9,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 75.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 7655,
+      "strat_fold": 3,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.108,
+        "st_inferior_max": 0.014,
+        "st_lateral_max": 0.001,
+        "heart_rate_bpm": 87.3,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 62.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 7673,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.003,
+        "st_inferior_max": -0.01,
+        "st_lateral_max": -0.001,
+        "heart_rate_bpm": 79.6,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 68.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 7708,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.046,
+        "st_inferior_max": 0.068,
+        "st_lateral_max": -0.03,
+        "heart_rate_bpm": 74.2,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 66.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 7736,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.117,
+        "st_inferior_max": 0.03,
+        "st_lateral_max": -0.005,
+        "heart_rate_bpm": 101.7,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 68.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 8669,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": -0.001,
+        "st_inferior_max": 0.066,
+        "st_lateral_max": -0.002,
+        "heart_rate_bpm": 79.7,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 89.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 8793,
+      "strat_fold": 4,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 130.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.137,
+        "st_inferior_max": 0.019,
+        "st_lateral_max": 0.032,
+        "heart_rate_bpm": 47.0,
+        "qrs_duration_ms": 130.0,
+        "leads_trusted": 12.0,
+        "age": 55.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 8977,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.026,
+        "st_inferior_max": 0.046,
+        "st_lateral_max": 0.021,
+        "heart_rate_bpm": 54.5,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 48.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 8983,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.094,
+        "st_inferior_max": 0.127,
+        "st_lateral_max": -0.052,
+        "heart_rate_bpm": 89.3,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 60.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 9096,
+      "strat_fold": 3,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.071,
+        "st_inferior_max": 0.007,
+        "st_lateral_max": 0.013,
+        "heart_rate_bpm": 60.9,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 57.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 9480,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.062,
+        "st_inferior_max": 0.016,
+        "st_lateral_max": -0.02,
+        "heart_rate_bpm": 66.1,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 65.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 10539,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.135,
+        "st_inferior_max": 0.009,
+        "st_lateral_max": -0.027,
+        "heart_rate_bpm": 93.0,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 83.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 10728,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": -0.003,
+        "st_inferior_max": 0.034,
+        "st_lateral_max": -0.004,
+        "heart_rate_bpm": 72.7,
+        "qrs_duration_ms": 70.0,
+        "leads_trusted": 12.0,
+        "age": 70.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 11043,
+      "strat_fold": 2,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.058,
+        "st_inferior_max": 0.028,
+        "st_lateral_max": 0.007,
+        "heart_rate_bpm": 108.6,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 89.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 11097,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.195,
+        "st_inferior_max": 0.032,
+        "st_lateral_max": -0.038,
+        "heart_rate_bpm": 65.1,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 66.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 11629,
+      "strat_fold": 5,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 140.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.15,
+        "st_inferior_max": -0.002,
+        "st_lateral_max": 0.048,
+        "heart_rate_bpm": 67.9,
+        "qrs_duration_ms": 140.0,
+        "leads_trusted": 12.0,
+        "age": 62.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 11671,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.044,
+        "st_inferior_max": -0.021,
+        "st_lateral_max": 0.002,
+        "heart_rate_bpm": 79.0,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 51.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 12545,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.125,
+        "st_inferior_max": 0.03,
+        "st_lateral_max": -0.055,
+        "heart_rate_bpm": 89.9,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 82.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 12631,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.045,
+        "st_inferior_max": 0.034,
+        "st_lateral_max": 0.029,
+        "heart_rate_bpm": 89.1,
+        "qrs_duration_ms": 70.0,
+        "leads_trusted": 12.0,
+        "age": 67.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 12710,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.18,
+        "st_inferior_max": -0.087,
+        "st_lateral_max": 0.029,
+        "heart_rate_bpm": 49.4,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 65.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 12867,
+      "strat_fold": 3,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.001,
+        "st_inferior_max": 0.056,
+        "st_lateral_max": 0.012,
+        "heart_rate_bpm": 63.2,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 62.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 12978,
+      "strat_fold": 3,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": -0.009,
+        "st_inferior_max": 0.063,
+        "st_lateral_max": 0.02,
+        "heart_rate_bpm": 60.9,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 63.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 13151,
+      "strat_fold": 3,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.049,
+        "st_inferior_max": -0.01,
+        "st_lateral_max": 0.004,
+        "heart_rate_bpm": 70.1,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 64.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 13580,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.102,
+        "st_inferior_max": 0.065,
+        "st_lateral_max": -0.014,
+        "heart_rate_bpm": 89.6,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 65.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 14110,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.049,
+        "st_inferior_max": 0.011,
+        "st_lateral_max": 0.013,
+        "heart_rate_bpm": 69.9,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 64.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 14316,
+      "strat_fold": 6,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 210.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.028,
+        "st_inferior_max": -0.004,
+        "st_lateral_max": 0.298,
+        "heart_rate_bpm": 75.1,
+        "qrs_duration_ms": 210.0,
+        "leads_trusted": 12.0,
+        "age": 85.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 14391,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.012,
+        "st_inferior_max": 0.038,
+        "st_lateral_max": -0.012,
+        "heart_rate_bpm": 81.8,
+        "qrs_duration_ms": 70.0,
+        "leads_trusted": 12.0,
+        "age": 67.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 14908,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.072,
+        "st_inferior_max": 0.017,
+        "st_lateral_max": 0.026,
+        "heart_rate_bpm": 71.8,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 59.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 15166,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.065,
+        "st_inferior_max": 0.078,
+        "st_lateral_max": 0.054,
+        "heart_rate_bpm": 59.5,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 65.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 15535,
+      "strat_fold": 4,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 130.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.126,
+        "st_inferior_max": -0.056,
+        "st_lateral_max": 0.008,
+        "heart_rate_bpm": 56.2,
+        "qrs_duration_ms": 130.0,
+        "leads_trusted": 12.0,
+        "age": 67.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 15641,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.028,
+        "st_inferior_max": -0.001,
+        "st_lateral_max": -0.004,
+        "heart_rate_bpm": 68.8,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 41.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 16282,
+      "strat_fold": 2,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.177,
+        "st_inferior_max": 0.046,
+        "st_lateral_max": 0.013,
+        "heart_rate_bpm": 70.9,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 62.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 16418,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.072,
+        "st_inferior_max": 0.045,
+        "st_lateral_max": 0.015,
+        "heart_rate_bpm": 72.7,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 53.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 16480,
+      "strat_fold": 8,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.018,
+        "st_inferior_max": 0.137,
+        "st_lateral_max": -0.086,
+        "heart_rate_bpm": 107.4,
+        "qrs_duration_ms": 120.0,
+        "leads_trusted": 12.0,
+        "age": 36.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 16586,
+      "strat_fold": 8,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.089,
+        "st_inferior_max": 0.023,
+        "st_lateral_max": -0.012,
+        "heart_rate_bpm": 66.8,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 83.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 16699,
+      "strat_fold": 3,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.033,
+        "st_inferior_max": 0.008,
+        "st_lateral_max": 0.019,
+        "heart_rate_bpm": 89.2,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 63.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 16711,
+      "strat_fold": 9,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 210.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.06,
+        "st_inferior_max": 0.02,
+        "st_lateral_max": 0.009,
+        "heart_rate_bpm": 104.8,
+        "qrs_duration_ms": 210.0,
+        "leads_trusted": 12.0,
+        "age": 77.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 16714,
+      "strat_fold": 1,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 150.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.031,
+        "st_inferior_max": -0.039,
+        "st_lateral_max": 0.048,
+        "heart_rate_bpm": 75.8,
+        "qrs_duration_ms": 150.0,
+        "leads_trusted": 12.0,
+        "age": 87.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 16895,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.116,
+        "st_inferior_max": -0.007,
+        "st_lateral_max": 0.051,
+        "heart_rate_bpm": 109.4,
+        "qrs_duration_ms": 70.0,
+        "leads_trusted": 12.0,
+        "age": 48.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 16952,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.083,
+        "st_inferior_max": 0.023,
+        "st_lateral_max": 0.017,
+        "heart_rate_bpm": 60.7,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 82.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 17281,
+      "strat_fold": 2,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.01,
+        "st_inferior_max": 0.017,
+        "st_lateral_max": -0.018,
+        "heart_rate_bpm": 62.3,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 62.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 17321,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": -0.028,
+        "st_inferior_max": 0.096,
+        "st_lateral_max": -0.003,
+        "heart_rate_bpm": 67.6,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 63.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 17518,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.114,
+        "st_inferior_max": 0.03,
+        "st_lateral_max": 0.081,
+        "heart_rate_bpm": 81.5,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 57.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 17565,
+      "strat_fold": 1,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.028,
+        "st_inferior_max": 0.027,
+        "st_lateral_max": 0.015,
+        "heart_rate_bpm": 83.2,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 63.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 17876,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.164,
+        "st_inferior_max": 0.063,
+        "st_lateral_max": -0.003,
+        "heart_rate_bpm": 76.6,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 69.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 18223,
+      "strat_fold": 2,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 130.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.041,
+        "st_inferior_max": -0.036,
+        "st_lateral_max": 0.015,
+        "heart_rate_bpm": 74.6,
+        "qrs_duration_ms": 130.0,
+        "leads_trusted": 12.0,
+        "age": 61.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 18467,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.041,
+        "st_inferior_max": 0.037,
+        "st_lateral_max": -0.035,
+        "heart_rate_bpm": 71.7,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 71.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 18582,
+      "strat_fold": 6,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.132,
+        "st_inferior_max": -0.011,
+        "st_lateral_max": 0.012,
+        "heart_rate_bpm": 96.1,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 42.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 18596,
+      "strat_fold": 9,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 170.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": -0.051,
+        "st_inferior_max": 0.083,
+        "st_lateral_max": -0.053,
+        "heart_rate_bpm": 80.1,
+        "qrs_duration_ms": 170.0,
+        "leads_trusted": 12.0,
+        "age": 85.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 19157,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.024,
+        "st_inferior_max": -0.026,
+        "st_lateral_max": 0.005,
+        "heart_rate_bpm": 114.0,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 64.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 19370,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.077,
+        "st_inferior_max": 0.034,
+        "st_lateral_max": -0.053,
+        "heart_rate_bpm": 72.4,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 87.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 19544,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.098,
+        "st_inferior_max": 0.028,
+        "st_lateral_max": -0.027,
+        "heart_rate_bpm": 54.9,
+        "qrs_duration_ms": 110.0,
+        "leads_trusted": 12.0,
+        "age": 85.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 19573,
+      "strat_fold": 7,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.033,
+        "st_inferior_max": 0.031,
+        "st_lateral_max": -0.007,
+        "heart_rate_bpm": 84.5,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 55.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 20425,
+      "strat_fold": 8,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.093,
+        "st_inferior_max": -0.035,
+        "st_lateral_max": 0.013,
+        "heart_rate_bpm": 76.7,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 60.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 20655,
+      "strat_fold": 4,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.135,
+        "st_inferior_max": 0.038,
+        "st_lateral_max": 0.021,
+        "heart_rate_bpm": 50.9,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 57.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 20921,
+      "strat_fold": 2,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.114,
+        "st_inferior_max": -0.026,
+        "st_lateral_max": 0.012,
+        "heart_rate_bpm": 70.7,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 52.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 21292,
+      "strat_fold": 7,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.041,
+        "st_inferior_max": 0.011,
+        "st_lateral_max": -0.011,
+        "heart_rate_bpm": 75.5,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 62.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 21401,
+      "strat_fold": 7,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.071,
+        "st_inferior_max": -0.0,
+        "st_lateral_max": -0.009,
+        "heart_rate_bpm": 72.6,
+        "qrs_duration_ms": 90.0,
+        "leads_trusted": 12.0,
+        "age": 70.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 21452,
+      "strat_fold": 1,
+      "rule_ids": [
+        "G3_WIDE_QRS"
+      ],
+      "reasons": [
+        "[G3_WIDE_QRS (REVIEW)] QRS duration 140.0 ms (>= 130 ms): suspected bundle branch block. ST criteria are unreliable in this configuration and require manual interpretation."
+      ],
+      "measurements": {
+        "st_anterior_max": 0.176,
+        "st_inferior_max": 0.091,
+        "st_lateral_max": -0.045,
+        "heart_rate_bpm": 85.4,
+        "qrs_duration_ms": 140.0,
+        "leads_trusted": 12.0,
+        "age": 59.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 21489,
+      "strat_fold": 9,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.039,
+        "st_inferior_max": -0.029,
+        "st_lateral_max": -0.022,
+        "heart_rate_bpm": 93.8,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 78.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 21584,
+      "strat_fold": 10,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.047,
+        "st_inferior_max": 0.017,
+        "st_lateral_max": -0.012,
+        "heart_rate_bpm": 84.7,
+        "qrs_duration_ms": 80.0,
+        "leads_trusted": 12.0,
+        "age": 82.0,
+        "sex": 1.0
+      }
+    },
+    {
+      "ecg_id": 21596,
+      "strat_fold": 5,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.183,
+        "st_inferior_max": 0.047,
+        "st_lateral_max": -0.011,
+        "heart_rate_bpm": 70.3,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 76.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 21677,
+      "strat_fold": 7,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": 0.052,
+        "st_inferior_max": 0.026,
+        "st_lateral_max": 0.01,
+        "heart_rate_bpm": 69.0,
+        "qrs_duration_ms": 100.0,
+        "leads_trusted": 12.0,
+        "age": 51.0,
+        "sex": 0.0
+      }
+    },
+    {
+      "ecg_id": 21820,
+      "strat_fold": 7,
+      "rule_ids": [],
+      "reasons": [],
+      "measurements": {
+        "st_anterior_max": -0.034,
+        "st_inferior_max": -0.04,
+        "st_lateral_max": 0.022,
+        "heart_rate_bpm": 65.4,
+        "qrs_duration_ms": 60.0,
+        "leads_trusted": 12.0,
+        "age": 80.0,
+        "sex": 1.0
+      }
+    }
+  ]
+}

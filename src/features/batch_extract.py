@@ -7,7 +7,7 @@ Column contract (see src/features/extract_features.py):
   - meta columns           : ecg_id, target_label, strat_fold, age, sex
   - FEATURE_COLUMNS        : classifier inputs, ST measured at the J point
   - LEGACY_COLUMNS         : per-lead ST at J+60, for convention comparison only
-  - DIAGNOSTIC_COLUMNS     : beats_used, qrs_plausible
+  - DIAGNOSTIC_COLUMNS     : beats_used, qrs_plausible, leads_trusted
 """
 
 import sys

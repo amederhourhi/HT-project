@@ -61,7 +61,7 @@ FEATURE_COLUMNS = [
 # are not inputs to the interpretable classifier.
 LEGACY_COLUMNS = [f"st_j60_{lead}" for lead in
                   ["I", "II", "III", "AVR", "AVL", "AVF", "V1", "V2", "V3", "V4", "V5", "V6"]]
-DIAGNOSTIC_COLUMNS = ["beats_used", "qrs_plausible"]
+DIAGNOSTIC_COLUMNS = ["beats_used", "qrs_plausible", "leads_trusted"]
 
 
 # ---------------------------------------------------------
@@ -123,10 +123,18 @@ def extract_clinical_features(raw_signals, fs=100.0, lead_names=None):
     # Only leads the delineator vouches for can contribute. Without that filter a
     # single failed lead would report a plausible-looking territory maximum, and
     # the deterministic guardrails would escalate on a measurement artefact.
+    #
+    # Computed once here because two consumers need it: the territory maxima below,
+    # and the persisted `leads_trusted` column that lets the guardrails treat an
+    # unmeasured lead as unknown instead of as zero deviation.
+    trusted_leads = [
+        lead for lead in lead_names
+        if lead in st_by_lead and st_details.get(lead, {}).get("plausible", False)
+    ]
+
     def territory_max(leads):
-        trusted = [st_by_lead[ld] for ld in leads
-                   if ld in st_by_lead and st_details.get(ld, {}).get("plausible", False)]
-        return max(trusted) if trusted else 0.0
+        readings = [st_by_lead[lead] for lead in leads if lead in trusted_leads]
+        return max(readings) if readings else 0.0
 
     # LAD (Left Anterior Descending) territory: V1-V4
     st_anterior_max = territory_max(["V1", "V2", "V3", "V4"])
@@ -151,6 +159,13 @@ def extract_clinical_features(raw_signals, fs=100.0, lead_names=None):
         # Delineation diagnostics
         "beats_used": landmarks["beats_used"],
         "qrs_plausible": landmarks["qrs_plausible"],
+        # Names of the leads whose ST measurement survived plausibility checking.
+        # The per-lead st_* columns below carry 0.0 for a lead that failed, because
+        # they are classifier inputs and the shipped RandomForest expects exactly
+        # the columns it was trained on - so a guardrail cannot read st_V4 = 0.0 as
+        # "no deviation". This column is what separates "flat" from "never
+        # measured", which is the difference between a normal ECG and an artefact.
+        "leads_trusted": ",".join(trusted_leads),
     }
 
     # Per-lead ST deviation at the J point (the guideline convention)

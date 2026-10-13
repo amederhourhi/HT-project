@@ -29,9 +29,14 @@ class RecordOutcome:
     ecg_id: int
     label: int
     strat_fold: int
-    # True when at least one deterministic guardrail fired, i.e. the record
-    # would be routed to emergency escalation irrespective of model risk.
+    # True when the record is routed to TIER_3 - a cath-lab activation. With
+    # severities split, "a rule fired" and "this patient goes to emergency care"
+    # are different questions; this field answers the second one, and a REVIEW-only
+    # finding (a blocked QRS, say) is deliberately not counted here.
     escalated: bool
+    # Stable identifiers of every rule that fired, at any severity. Counting fires
+    # by id is what shows which rule is spending the false-alarm budget.
+    rule_ids: tuple[str, ...]
     reasons: tuple[str, ...]
     # The measurements the rules read, kept so a reviewer can see *why* a
     # record escalated without re-running the pipeline.
@@ -87,9 +92,25 @@ def summarize_guardrails(outcomes: Sequence[RecordOutcome]) -> dict:
             "ci95_high": high,
         }
 
+    per_rule: dict[str, dict] = {}
+    for outcome in outcomes:
+        # Deduplicated: the ST rule emits one finding per satisfied contiguous pair,
+        # so a record with three pairs would otherwise be counted three times under
+        # a heading that says records.
+        for rule_id in set(outcome.rule_ids):
+            bucket = per_rule.setdefault(
+                rule_id, {"records": 0, "normal": 0, "infarction": 0}
+            )
+            bucket["records"] += 1
+            bucket[CLASS_NAMES[outcome.label]] += 1
+
     return {
         "n_records": len(outcomes),
         "per_class": per_class,
+        # Fires per rule, split by ground-truth class. This is the table that says
+        # which rule to fix: a false-alarm budget overspent by one guardrail is that
+        # guardrail's problem, not the layer's.
+        "per_rule": per_rule,
         "false_escalations": [
             outcome for outcome in outcomes if outcome.escalated and outcome.label == LABEL_NORMAL
         ],
@@ -109,6 +130,7 @@ def summary_to_jsonable(summary: dict) -> dict:
             {
                 "ecg_id": outcome.ecg_id,
                 "strat_fold": outcome.strat_fold,
+                "rule_ids": list(outcome.rule_ids),
                 "reasons": list(outcome.reasons),
                 "measurements": outcome.measurements,
             }
