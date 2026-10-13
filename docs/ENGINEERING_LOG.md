@@ -531,6 +531,117 @@ The guardrail audit now passes at the agreed budget without any change to the ru
 
 Rewrite Guardrail 1 against contiguous-lead criteria with sex- and age-specific V2–V3 cut-points, consuming per-lead `st_details` rather than territory maxima, gating on `qrs_plausible`, and emitting stable `rule_id`s with `ESCALATE`/`REVIEW` severities. The measurement fix makes those criteria meaningful; it does not implement them.
 
+*Delivered in Section 13.*
+
+---
+
+## 13. Guardrail 1 Rebuilt on Contiguous-Lead Criteria (Hardening Sprint P0-2)
+
+### Why This Section Exists
+
+Section 12 removed a measurement artefact and left the rules themselves untouched: healthy escalation fell to 3.2% while Guardrail 1 still read *"if the largest ST deviation in a territory crosses one threshold, activate the cath lab."* That sentence is not the definition. The Fourth Universal Definition of Myocardial Infarction requires **two contiguous leads**, and its cut-points are **lead-, sex- and age-specific** in V2–V3. This section implements the definition and reports what it costs.
+
+### What Changed
+
+| Module | Change |
+|---|---|
+| `src/triage/leads.py` | **New.** Contiguous pair table, territories, Fourth-UDMI cut-points as a function of lead/age/sex, demographic normalisation, `find_stemi_pairs()` |
+| `src/triage/triage_rules.py` | Rewritten. Consumes per-lead trusted ST + demographics; emits `Finding`s carrying `rule_id` and severity; Guardrail 3 downgraded from ESCALATE to REVIEW |
+| `src/features/extract_features.py` | Persists `leads_trusted` — which leads survived plausibility checking |
+| `src/triage/risk_fusion.py` | Payload widened: `st_by_lead`, `patient`, `qrs_plausible`; `predict()` accepts `age`/`sex` |
+| `src/evaluation/score_guardrails.py` | Adapter feeds per-lead ST; "escalated" now means TIER_3, not "a rule fired"; prints a per-rule tally |
+| `src/evaluation/triage_metrics.py` | `rule_ids` per record; `per_rule` fires split by ground truth |
+| `tests/test_triage.py` | Replaced. Two-record end-to-end demo → 29 deterministic assertions, no checkpoints required |
+| `src/dashboard/app.py` | Passes intake demographics; stops fabricating age 55; banner names the severity |
+
+### The Two Defects, and What Each Cost
+
+The old rule applied **0.20 mV to every precordial lead** and accepted **a single lead**. Both defects pointed the wrong way at once:
+
+- **Too eager:** one elevated lead was enough, so a lone high-taking-off V2 — ordinary in healthy men — became an activation.
+- **Too blind:** V4/V5/V6 require only 0.10 mV. A V4/V5 pair at +0.12/+0.11 mV is a criterion today and was invisible then.
+
+### Cohort Results ($N = 251$, rules as shipped)
+
+| Rules under test | Healthy (NORM) escalated | Infarction escalated |
+|---|---|---|
+| Regional maxima, ST at J+60 (Section 11) | 32 / 124 = **25.8%** | 58 / 127 = **45.7%** |
+| Regional maxima, ST at J (Section 12) | 4 / 124 = **3.2%** | 41 / 127 = **32.3%** |
+| **Contiguous criteria, ST at J (this section)** | 3 / 124 = **2.4%** (Wilson [0.8%, 6.9%]) | 27 / 127 = **21.3%** ([15.0%, 29.2%]) |
+
+Held-out folds 9–10: **0 / 20** healthy escalations ([0.0%, 16.1%]) and 6 / 32 infarction escalations ([8.9%, 35.3%]). The healthy interval is wide because twenty records cannot bound a rate tightly; it is reported rather than smoothed.
+
+Fires per rule, counted in **records** (a record may fire more than one rule):
+
+| `rule_id` | severity | records | NORM | infarction |
+|---|---|---|---|---|
+| `G1_CONTIGUOUS_STE` | ESCALATE | 26 | 2 | 24 |
+| `G2_SEVERE_TACHYCARDIA` | ESCALATE | 6 | 1 | 5 |
+| `G3_WIDE_QRS` | REVIEW | 21 | 2 | 19 |
+
+The 21 wide-QRS records are the point of the severity split: they are routed to clinician review, and 19 of them are infarction-labeled records that the old engine would have escalated to the cath lab on conduction delay alone. One healthy record is now review-only.
+
+### Is the Sensitivity Drop Real?
+
+Infarction escalation fell 32.3% → 21.3%, which looks like a bad trade against a 0.8-point false-alarm gain. It is not measurable as a sensitivity loss on this cohort, and the reason matters more than the number: of 127 infarction records, **6 carry an acute signature** (`AMI` code or stadium 1). The rest are old/healed infarction, where *not* activating the cath lab is the clinically correct behaviour. Of those 6:
+
+| `ecg_id` | patient | leads ≥ 0.10 mV at J | outcome | reading |
+|---|---|---|---|---|
+| 2450 | 81F | V1 +0.137, V2 +0.161, aVR +0.180 | **TIER_3** via V1/V2 pair | correct by definition |
+| 3309 | 66F | V2 +0.151 only | TIER_1 | single lead; V2 clears 0.15 but no neighbour does — the definition says *not STEMI*, and this is what contiguity is for |
+| 3668 | 52F | V3 +0.110 only | TIER_1 | below the 0.15 mV V2–V3 criterion for women |
+| 21452 | 59M | V1 +0.131, V2 +0.176, V3 +0.132 | **TIER_2_REVIEW** via `G3_WIDE_QRS` | V2/V3 need 0.20 mV in a man ≥ 40; not STEMI by definition — and the wide QRS still forces a human read rather than a discharge |
+| 11043 | 89M | none | TIER_1 | no ST elevation at all; `AMI`-coded healed infarction |
+| 11671 | 51F | none | TIER_1 | same |
+
+So the deterministic layer loses no acute-STEMI-pattern record that the definition would have caught. What it gives up is 14 points of escalation on **healed infarction** — patients whose scars were never the guardrail's job. The residual honest risk is the opposite direction: a real acute occlusion in this cohort is not identifiable from the labels at all, so this table bounds rule behaviour, not clinical sensitivity.
+
+### The Three Healthy Escalations, Named
+
+| `ecg_id` | fold | trigger | assessment |
+|---|---|---|---|
+| 552 | 1 | V2 +0.275 / V3 +0.302 mV against the 0.20 mV cut-point for a man ≥ 40 (0.075 and 0.102 mV clear); the V3/V4 pair also meets | **Genuine ST elevation.** Labeled NORM by PTB-XL; benign early repolarization and high take-off fall inside that label. A disagreement with the dataset's labelling policy, not a measurement failure. |
+| 3711 | 7 | V3 +0.288 / V4 +0.137, 34-year-old male | The young-male V3 exemption (0.25 mV) is exceeded. V4 at 0.137 clears its generic 0.10. Most likely benign early repolarization; the rule cannot know that. |
+| 10231 | 6 | Heart rate 140.3 bpm (`G2`), QRS 160 ms (`G3`) | Tachycardia escalation is correct as a *rhythm* emergency; the record is NORM on infarction grounds. Rate and morphology rules answer different questions. |
+
+At 2.4% with the accepted cut-points, the remaining false alarms are the ones the published definition itself would call STEMI on this data. Driving them lower means arguing with PTB-XL's `NORM` label or tightening the rule beyond the guideline, and neither belongs in a clinical tool.
+
+### Corrections to Previously Published Claims
+
+1. **Commit `2d907e7` message body is wrong.** It states infarction escalation went "45.7% → 3.2%"; 3.2% is the *healthy* rate. Correct: 45.7% → 32.3% infarction, 25.8% → 3.2% healthy. The commit is published, so this is corrected forward rather than rewritten.
+2. **`tests/test_triage.py` asserted that Patient 8 (`00008_lr`) must escalate as an acute anterior infarction.** It does not and should not: ST at J ranges −0.035 to +0.116 mV across all twelve leads, no contiguous pair meets any criterion, and the record's SCP codes are `{'IMI': 35.0, 'ABQRS': 0.0, 'SR': 0.0}`. The assertion was written against the J+60 artefact and passed only because of it. The file is replaced by deterministic unit tests, which write no report — so both `docs/reports/patient_00001_lr_triage_report.txt` and `docs/reports/patient_00008_lr_triage_report.txt` now sit in the repository as **stale artefacts of the retired rules**, quoting J+60 ST values and an override vocabulary that no longer ships. Nothing regenerates them until P0-5.
+3. **The dashboard's "Anterior STEMI (LAD)" archive category is a label filter, not a verified STEMI list.** `src/dashboard/app.py` selects infarction-labeled records with `st_anterior_max ≥ 0.15 mV`; the walk-in demo route still points at `00008_lr`, which Section 12 showed is not an anterior STEMI. Replacing that demo record is an open item.
+4. **Not implemented, deliberately.** aVR elevation and posterior ST depression were trialled as guardrails during this phase and rejected: on corrected measurements the crude proxies raised healthy escalation from 1.6% to 8.9% and were retired before shipping. A defensible version needs reciprocal-change definitions (e.g. ST depression ≥ 0.05 mV in V1–V3 with upright T, or V7–V9 which this dataset lacks).
+
+### Limitations
+
+- **100 Hz sampling quantises the J point to ±10 ms.** The offset is unbiased but not exact; `filename_hr` (500 Hz) is the fix, and it changes the feature table, so it belongs with P0-4's retraining rather than here.
+- **One finding per satisfied pair.** An anterior chain can emit V1/V2, V2/V3 and V3/V4 as three separate findings. The tier is unaffected and the per-rule tally deduplicates, but the clinician-facing report should collapse to one line per territory — P0-5.
+- **Guardrails cannot see the statistical engine's confidence.** The audit pins `risk_score_pct` to 0 so every escalation is attributable to a rule; the interaction between a borderline model score and a REVIEW finding is therefore untested at cohort level.
+- **`G3_WIDE_QRS` fires on 21 records, 2 of them healthy.** As REVIEW it costs a clinician read, not an activation — the accepted trade for keeping blocked ECGs out of routine discharge.
+- **The demographic exemption only moves V2–V3.** The young-male threshold (0.25 mV) is the sole place age relaxes a criterion, and it does nothing for the neighbouring leads: record `3711` clears the exempted V3 cut-point *and* the generic V4 cut-point, and no demographic rule can separate that pattern from injury.
+
+### Reproduction
+
+```bash
+# Guardrail logic, no checkpoints or records required
+python tests/test_triage.py
+
+# Cohort audit at the agreed budget (fails the run above 10% healthy escalation)
+python src/evaluation/score_guardrails.py --scope all --fail-above 0.10
+python src/evaluation/score_guardrails.py --scope test          # held-out folds 9-10
+
+# Feature table including the new leads_trusted column
+python src/data/download_ptbxl.py --cohort
+python src/features/batch_extract.py
+```
+
+`data/processed/guardrail_audit_all.json` is the machine-readable summary of the full-cohort run, written by `--json-out`.
+
+### Next (P0-5)
+
+The report is now traceable to a rule id and a cut-point, but not yet to a *version*: no timestamp, no model hash, no git SHA, and `effective_risk_pct = max(base, 85)` still fabricates a number that no measurement produced. Tier names are duplicated across `risk_fusion.py` (`LOW_RISK`/`MODERATE_RISK`/`HIGH_RISK`) and `triage_rules.py` (`TIER_1..3`), which is how a report ends up contradicting the engine that wrote it. P0-5 removes both.
+
 ---
 
 ## Engineering Milestones
@@ -543,7 +654,7 @@ Rewrite Guardrail 1 against contiguous-lead criteria with sex- and age-specific 
 - [x] Phase 5: Safety-Guardrailed Clinical Triage & SBAR Clinical Reports (2-record demonstration)
 - [x] **Hardening Sprint P0-1: Guardrail Layer Audit — population verification, $N = 251$ (Section 11)**
 - [x] **Hardening Sprint P0-3: ST measured at the J point against a PR-segment baseline; QRS/ST plausibility guards; cohort reproducible from tracked inputs — healthy escalation 25.8% → 3.2% with the rules unchanged (Section 12)**
-- [ ] **Hardening Sprint P0-2: Contiguous-lead STEMI criteria (target: healthy escalation < 10%)**
+- [x] **Hardening Sprint P0-2: Contiguous-lead STEMI criteria with sex/age-specific V2–V3 cut-points, stable `rule_id`s and `ESCALATE`/`REVIEW` severities — healthy escalation 3.2% → 2.4%, held-out folds 0/20 (Section 13)**
 - [ ] **Hardening Sprint P0-4: Comparable dual-engine cohorts and reconciled benchmark metrics**
 - [ ] **Hardening Sprint P0-5: Traceable SBAR report and a single source of truth for triage tiers**
 - [ ] **Phase 6: Interactive Clinician Dashboard (Streamlit)**
