@@ -1,58 +1,57 @@
 """
-CardioSense - Theme & Style Loader
-Loads styles.css and injects dynamic CSS variables for dark/light modes
-and full-screen emergency alert atmospheres.
+CardioSense - Triage Reader presentation layer
+
+Two jobs, both purely visual:
+  * inject `styles.css` into the page
+  * map a triage tier or finding severity onto the headline and accent class
+    the reader uses
+
+The tier strings are imported from `ClinicalTriageEngine` rather than repeated
+here. A view that invents its own tier names is how a second vocabulary starts,
+and this project already has one of those to retire.
 """
 
 from pathlib import Path
+
 import streamlit as st
 
+from src.triage.triage_rules import ESCALATE, REVIEW, ClinicalTriageEngine
 
-def apply_theme_and_atmosphere(theme: str, tier: str, is_results_page: bool = False):
-    """Loads external styles.css and sets dynamic color variables."""
-    css_file = Path(__file__).resolve().parent / "styles.css"
-    if not css_file.exists():
-        return
+CSS_FILE = Path(__file__).resolve().parent / "styles.css"
 
-    css_content = css_file.read_text(encoding="utf-8")
-    is_dark = theme == "dark"
+# tier -> (headline, accent class). The neutral class is the fallback for a
+# tier the reader has never seen, which should be never, but not silently.
+TIER_PRESENTATION = {
+    ClinicalTriageEngine.TIER_ESCALATION: ("Tier 3 - Emergency escalation", "is-escalate"),
+    ClinicalTriageEngine.TIER_REVIEW: ("Tier 2 - Clinician review", "is-review"),
+    ClinicalTriageEngine.TIER_ROUTINE: ("Tier 1 - Routine follow-up", "is-routine"),
+}
 
-    # Default palettes
-    bg_main = "#0B0F19" if is_dark else "#F8FAFC"
-    text_main = "#F8FAFC" if is_dark else "#0F172A"
-    card_bg = "#161E2E" if is_dark else "#FFFFFF"
-    card_border = "#2A374A" if is_dark else "#E2E8F0"
+# severity -> chip class
+SEVERITY_PRESENTATION = {
+    ESCALATE: "sev-escalate",
+    REVIEW: "sev-review",
+}
 
-    # Full screen color takeover on results page
-    if is_results_page:
-        if tier == "TIER_3_ESCALATION":
-            bg_main = "#450A0A" if is_dark else "#FEF2F2"
-            card_bg = "#7F1D1D" if is_dark else "#FEE2E2"
-            card_border = "#DC2626"
-            text_main = "#FEE2E2" if is_dark else "#7F1D1D"
-        elif tier == "TIER_1_ROUTINE":
-            bg_main = "#052E16" if is_dark else "#F0FDF4"
-            card_bg = "#064E3B" if is_dark else "#DCFCE7"
-            card_border = "#16A34A"
-            text_main = "#DCFCE7" if is_dark else "#064E3B"
-        else:
-            bg_main = "#1E293B" if is_dark else "#F1F5F9"
-            card_bg = "#334155" if is_dark else "#E2E8F0"
-            card_border = "#64748B"
-            text_main = "#F1F5F9" if is_dark else "#1E293B"
 
-    # Inject variables and external stylesheet
-    st.markdown(
-        f"""
-        <style>
-        :root {{
-            --bg-main: {bg_main};
-            --text-main: {text_main};
-            --card-bg: {card_bg};
-            --card-border: {card_border};
-        }}
-        {css_content}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+@st.cache_data(show_spinner=False)
+def _read_css() -> str:
+    """Read the stylesheet once per server process, not once per rerun."""
+    if not CSS_FILE.exists():
+        return ""
+    return CSS_FILE.read_text(encoding="utf-8")
+
+
+def inject_css() -> None:
+    """Push the stylesheet into the page. Called once, at the top of app.py."""
+    st.markdown(f"<style>{_read_css()}</style>", unsafe_allow_html=True)
+
+
+def tier_presentation(tier: str) -> tuple[str, str]:
+    """Return the headline and accent class for a triage tier."""
+    return TIER_PRESENTATION.get(tier, ("Triage tier unavailable", "is-neutral"))
+
+
+def severity_class(severity: str) -> str:
+    """Return the chip class for a finding severity."""
+    return SEVERITY_PRESENTATION.get(severity, "rule")

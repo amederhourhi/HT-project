@@ -1,0 +1,26 @@
+# CardioSense - Streamlit runtime theme
+#
+# Pinned deliberately. Streamlit's default theme base is "auto", which follows
+# the operating system, so on a dark-mode machine the widgets render as
+# near-black slabs on the light page that src/dashboard/styles.css assumes and
+# body text inherits a light colour that disappears against it. The reader's
+# whole design system is light; the theme has to be light too, on every machine,
+# or the two layers fight.
+#
+# These values mirror the tokens declared at the top of src/dashboard/styles.css.
+# Change one and you have to change the other.
+#
+# This file is read from the working directory, so launch the reader from the
+# project root:
+#   streamlit run src/dashboard/app.py
+
+[theme]
+base = "light"
+primaryColor = "#1f5c8b"
+backgroundColor = "#f5f6f8"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#1a1d21"
+borderColor = "#dfe3e8"
+
+[browser]
+gatherUsageStats = false

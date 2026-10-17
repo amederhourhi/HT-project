@@ -168,5 +168,9 @@ class CardioSenseEnsemble:
                 "qrs_plausible": features["qrs_plausible"],
                 "max_st_elevation_mv": features["max_st_elevation_mv"],
                 "overall_sqi": features["overall_sqi"],
+                # Beat count is the denominator of every averaged ST value. A
+                # measurement built from two beats is not as steady as one built
+                # from twelve, and a reader has to be able to tell them apart.
+                "beats_used": features["beats_used"],
             },
         }

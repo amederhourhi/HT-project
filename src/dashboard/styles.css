@@ -1,111 +1,375 @@
-/* CardioSense CDSS - Global Clinical Stylesheet */
+/*
+  CardioSense - Clinical Triage Reader stylesheet
 
-/* Remove default Streamlit sidebar completely */
-[data-testid="stSidebar"] {
-    display: none !important;
+  Design rules, in the order they matter:
+    1. The disposition must be readable in under a second, so the decision card
+       is the only element allowed a strong colour.
+    2. Numbers are measurements. Tabular figures, right aligned, so columns of
+       millivolts line up and small differences are visible.
+    3. Colour is reserved for severity. Nothing decorative gets an accent.
+    4. No emoji, no gradients, no full-screen tinting, no animation. A flashing
+       page is not more urgent than a label; it is just harder to read.
+*/
+
+:root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-sunken: #fafbfc;
+    --border: #dfe3e8;
+    --border-strong: #c7ced7;
+    --text: #1a1d21;
+    --text-muted: #5c6672;
+    --text-faint: #8a939f;
+
+    --escalate: #b3261e;
+    --escalate-bg: #fdf3f2;
+    --review: #9a5b00;
+    --review-bg: #fdf7ec;
+    --routine: #14683a;
+    --routine-bg: #f1f8f3;
+    --neutral: #465363;
+    --neutral-bg: #f2f4f7;
 }
 
-/* Base app container with smooth transition */
+/* Streamlit chrome has no place in a clinical tool */
+#MainMenu,
+footer,
+header[data-testid="stHeader"],
+[data-testid="stToolbar"] {
+    visibility: hidden;
+}
+
+div[data-testid="stDecoration"] {
+    display: none;
+}
+
+.block-container {
+    padding: 1.6rem 2.2rem 3rem 2.2rem;
+    max-width: 1240px;
+}
+
 .stApp {
-    background-color: var(--bg-main) !important;
-    color: var(--text-main) !important;
-    transition: background-color 0.4s ease, color 0.4s ease;
+    background-color: var(--bg);
+    /* Streamlit sets a text colour on this container that follows the OS theme.
+       Everything below that does not name its own colour inherits it, and on a
+       dark-mode machine that is white on white. Name it here instead of hoping
+       the theme file was read. */
+    color: var(--text);
 }
 
-/* Header typography */
-.main-title {
-    font-size: 2.1rem;
-    font-weight: 800;
-    margin-bottom: 2px;
-}
-
-.subtitle {
-    font-size: 1.0rem;
-    margin-bottom: 15px;
-    opacity: 0.8;
-}
-
-/* Card layout blocks */
-.hub-card {
-    background: var(--card-bg);
-    border: 2px solid var(--card-border);
-    border-radius: 14px;
-    padding: 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.2s ease;
-    margin-bottom: 12px;
-}
-
-.hub-card:hover {
-    transform: translateY(-4px);
-    border-color: #38BDF8;
-}
-
-.hub-title {
-    font-size: 1.35rem;
-    font-weight: 800;
-    margin-bottom: 6px;
-}
-
-.hub-desc {
+html,
+body,
+div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stMarkdownContainer"] li {
+    color: var(--text);
     font-size: 0.95rem;
-    opacity: 0.85;
+    line-height: 1.55;
 }
 
-/* Patient profile summary bar */
-.patient-header-card {
+/* ---------------------------------------------------------------- */
+/* Streamlit-native elements this stylesheet does not replace        */
+/* ---------------------------------------------------------------- */
+
+div[data-testid="stCaptionContainer"] {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+div[data-testid="stExpander"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+div[data-testid="stButton"] button,
+div[data-testid="stDownloadButton"] button {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text);
+    font-weight: 560;
+}
+
+div[data-testid="stButton"] button:hover,
+div[data-testid="stDownloadButton"] button:hover {
+    border-color: var(--neutral);
+    color: var(--text);
+}
+
+/* ---------------------------------------------------------------- */
+/* Panels that hold a figure                                         */
+/*                                                                   */
+/* A matplotlib chart cannot be rendered inside an HTML string, so   */
+/* those panels are `st.container(border=True)`. Streamlit already  */
+/* draws the border from theme.borderColor; the surface and the     */
+/* rhythm are what has to match `.cs-panel`. Targeted structurally   */
+/* because the emotion class names are generated per build.         */
+/* ---------------------------------------------------------------- */
+
+div[data-testid="stLayoutWrapper"] > div[data-testid="stVerticalBlock"] {
+    background: var(--surface);
+    padding: 1.05rem 1.25rem 1.15rem 1.25rem;
+    gap: 0.4rem;
+}
+
+/* ---------------------------------------------------------------- */
+/* Masthead                                                          */
+/* ---------------------------------------------------------------- */
+
+.cs-masthead {
     display: flex;
-    gap: 20px;
-    justify-content: center;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-bottom: 0.9rem;
+    margin-bottom: 1.3rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.cs-wordmark {
     font-size: 1.05rem;
-    margin-bottom: 25px;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid var(--card-border);
-    border-radius: 8px;
+    font-weight: 650;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
 }
 
-/* Critical Emergency Flashing Banner */
-@keyframes pulse-danger {
-    0% { opacity: 1.0; transform: scale(1); }
-    50% { opacity: 0.78; transform: scale(1.015); }
-    100% { opacity: 1.0; transform: scale(1); }
+.cs-wordmark small {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.73rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--text-muted);
 }
 
-.alarm-banner {
-    animation: pulse-danger 1.5s infinite ease-in-out;
-    padding: 18px;
-    border-radius: 12px;
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: 900;
-    background: #DC2626;
-    color: #FFFFFF;
-    letter-spacing: 0.5px;
-    margin-bottom: 20px;
+/* ---------------------------------------------------------------- */
+/* Decision card - the one element allowed to be loud                 */
+/* ---------------------------------------------------------------- */
+
+.cs-decision {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.6rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left-width: 5px;
+    border-radius: 4px;
 }
 
-/* Safe / Low Risk Banner */
-.safe-banner {
-    padding: 16px;
-    border-radius: 12px;
-    text-align: center;
-    font-size: 1.35rem;
-    font-weight: 800;
-    background: #10B981;
-    color: #FFFFFF;
-    margin-bottom: 20px;
+.cs-decision.is-escalate { border-left-color: var(--escalate); }
+.cs-decision.is-review   { border-left-color: var(--review); }
+.cs-decision.is-routine  { border-left-color: var(--routine); }
+.cs-decision.is-neutral  { border-left-color: var(--neutral); }
+
+.cs-tier {
+    font-size: 1.45rem;
+    font-weight: 680;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
 }
 
-/* Neutral / Intermediate Review Banner */
-.neutral-banner {
-    padding: 16px;
-    border-radius: 12px;
-    text-align: center;
-    font-size: 1.35rem;
-    font-weight: 800;
-    background: #64748B;
-    color: #FFFFFF;
-    margin-bottom: 20px;
+.is-escalate .cs-tier { color: var(--escalate); }
+.is-review   .cs-tier { color: var(--review); }
+.is-routine  .cs-tier { color: var(--routine); }
+.is-neutral  .cs-tier { color: var(--neutral); }
+
+.cs-action {
+    margin-top: 4px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.cs-patient {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--text-faint);
+}
+
+.cs-riskpair {
+    display: flex;
+    gap: 2.2rem;
+    margin-left: auto;
+    text-align: right;
+}
+
+.cs-figure {
+    font-size: 1.6rem;
+    font-weight: 620;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.cs-figure-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------------- */
+/* Panels                                                            */
+/* ---------------------------------------------------------------- */
+
+.cs-panel {
+    padding: 1.05rem 1.25rem 1.2rem 1.25rem;
+    margin: 1.05rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.cs-panel-title {
+    margin: 0 0 0.15rem 0;
+    font-size: 0.74rem;
+    font-weight: 640;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.cs-panel-note {
+    margin: 0 0 0.95rem 0;
+    font-size: 0.8rem;
+    color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------------- */
+/* Findings                                                          */
+/* ---------------------------------------------------------------- */
+
+ul.cs-findings {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul.cs-findings li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--border);
+    font-size: 0.88rem;
+}
+
+ul.cs-findings li:first-child { border-top: none; }
+
+.cs-chip {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    font-size: 0.68rem;
+    font-weight: 680;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.cs-chip.sev-escalate { color: var(--escalate); background: var(--escalate-bg); }
+.cs-chip.sev-review   { color: var(--review);   background: var(--review-bg); }
+.cs-chip.rule         { color: var(--text-muted); background: var(--neutral-bg); font-weight: 560; }
+
+/* ---------------------------------------------------------------- */
+/* Data tables - the per-lead ST grid                                */
+/* ---------------------------------------------------------------- */
+
+table.cs-data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+table.cs-data th {
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 620;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-strong);
+}
+
+table.cs-data td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+table.cs-data td.num,
+table.cs-data th.num {
+    text-align: right;
+    white-space: nowrap;
+}
+
+table.cs-data tr.group-start td { border-top: 1px solid var(--border-strong); }
+
+table.cs-data td.lead-name {
+    font-weight: 620;
+    letter-spacing: 0.02em;
+}
+
+table.cs-data tr.meets td { background: var(--escalate-bg); }
+table.cs-data tr.meets td.num { color: var(--escalate); font-weight: 660; }
+
+table.cs-data tr.unmeasured { color: var(--text-faint); }
+table.cs-data tr.unmeasured td { font-style: italic; }
+
+table.cs-data td.basis {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    font-variant-numeric: normal;
+    font-style: normal;
+}
+
+/* ---------------------------------------------------------------- */
+/* Compact key/value strip                                           */
+/* ---------------------------------------------------------------- */
+
+.cs-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2.4rem;
+}
+
+.cs-strip-item { min-width: 110px; }
+
+.cs-strip-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+.cs-strip-value {
+    font-size: 1.02rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.cs-flag-bad  { color: var(--escalate); }
+.cs-flag-warn { color: var(--review); }
+
+/* ---------------------------------------------------------------- */
+/* Footer                                                            */
+/* ---------------------------------------------------------------- */
+
+.cs-footer {
+    margin-top: 2.2rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.74rem;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.cs-footer code {
+    padding: 1px 5px;
+    font-size: 0.72rem;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 3px;
 }

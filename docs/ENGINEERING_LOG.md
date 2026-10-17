@@ -644,6 +644,98 @@ The report is now traceable to a rule id and a cut-point, but not yet to a *vers
 
 ---
 
+## 14. Clinician Interface Rebuilt as a Single Triage Reader
+
+### Why this happened
+
+The Phase 5 dashboard had grown around a demonstration rather than a reading task. It shipped a two-card launch hub, a light/dark toggle, a full-screen background wash whose colour was chosen by the triage tier, an animated red banner, a "Suspected Culprit" headline metric, and a case library whose tabs were labelled "Anterior STEMI (LAD)" over records that do not meet the STEMI criterion.
+
+Three of those were not cosmetic problems.
+
+- **The culprit label was a bare argmax.** `risk_fusion.py` ranked three regional maxima and named the artery attached to the largest, gated at 0.10 mV in any single lead. That is precisely the single-lead reasoning P0-2 removed from the guardrails, promoted to the most prominent position on the screen.
+- **The case library asserted a diagnosis its records do not support.** Of the 297 cohort records reachable from the picker, 86 carry an infarction label, and the tabs filed several of them as STEMI that satisfy no contiguous pair. Record `#00552` escalates while filed under "Normal Controls".
+- **The tier vocabulary disagreed with itself.** The engine underneath had already moved to `TIER_1..3`; the page still surfaced `LOW_RISK`/`MODERATE_RISK`/`HIGH_RISK` from `risk_fusion.py`.
+
+The instruction was to rebuild it: professional, readable, less clutter, and nothing that is only there to impress. Scope agreed before starting: keep Streamlit, rebuild everything above it, ship one reader.
+
+### What the reader shows
+
+`src/dashboard/app.py`, one screen, in the order a clinician reads it:
+
+| Region | Content | Why it is there |
+|---|---|---|
+| Picker | Record, editable Age, editable Sex, ground-truth label | The label stays because this is an engineering and demonstration tool, not a blind reading station. |
+| Decision card | Tier, action, effective risk beside model risk before rules | Showing both numbers makes the guardrail's contribution visible instead of silently overwriting a probability. |
+| Findings | Severity chip, stable `rule_id`, the measurement that fired | The same strings the SBAR note carries. |
+| ST grid | All twelve leads: value at J, cut-point, the clause that produced that cut-point, and whether it clears | The old UI never showed a per-lead number at all. |
+| Contiguous-lead panel | Which of the 9 pairs were testable and which satisfied the definition | A lead clearing its cut-point is highlighted and explicitly not called a criterion. |
+| Quality strip | SQI, beats averaged, rate, QRS, plausibility, leads measured | Confidence in the measurement, not just the measurement. |
+| Engines | RF, CNN and fused probability as three separate bars | The disagreement is the information; averaging it into one number was the old design's move. |
+| Regional maxima | Three territories, labelled descriptive | Kept because it is useful context, demoted because it is not a criterion. |
+| Inspector | One beat, four landmarks, and J+60 drawn and marked "legacy, not used" | Lets a reader see where the number came from, including the measurement that was retired. |
+| Footer | Commit SHA, rule modules, cohort size, checkpoint mtimes | A triage decision that cannot be tied to a commit cannot be defended afterwards. |
+
+Removed outright: the launch hub, the theme toggle, the full-screen colour wash, the animated banner, the scenario controls, the case library, the culprit headline metric, and every emoji.
+
+### The rule is the source of truth for what the page says
+
+The cut-point column calls `cut_point_mv()` and the pair panel calls `find_stemi_pairs()` from `src/triage/leads.py` — the same functions the engine calls. A view that restates a threshold in its own prose is a view that can disagree with the rule that made the decision, and that disagreement is invisible from the screen.
+
+The same reasoning kept the labels honest: the fusion panel says outright that the fused score is an unweighted mean with no calibration applied, and the regional maxima panel says these are what the old guardrail escalated on and are not a criterion.
+
+### Defects found while building it
+
+Each of these was caught by running the thing, which is the argument for running the thing.
+
+| Defect | Where | What it would have done |
+|---|---|---|
+| `axis.spine[spine]` — the matplotlib attribute is `spines` | both figures | Raised on the first render of either chart. |
+| `beats_used` computed by the extractor, dropped from the ensemble payload | `risk_fusion.py` | The quality strip would have shown a placeholder forever. |
+| A whitespace-only line inside a raw-HTML block | `contiguity_panel` | CommonMark ends an HTML block at a blank line, so the pair table printed as literal source text. |
+| A `<div class="cs-panel">` opened in one `st.markdown` call and closed in another | three panels | Each call renders in its own container, so the border wrapped nothing. Replaced with `st.container(border=True)`. |
+| Streamlit's theme `base` defaults to `auto`, following the operating system | no config existed | On a dark-mode machine: near-black widgets on a light page, and body text inheriting a light colour that disappears against it. Pinned light in `.streamlit/config.toml`, which meant un-ignoring that one path in `.gitignore`. |
+| Age and Sex widgets had no `key` | record picker | Streamlit derives the widget ID from the declared value, so two records sharing an on-file age collapse to one ID and an override typed against one persists onto the next. |
+| Two comments claimed the cohort manifest is tracked in git | `load_catalogue`, empty-catalogue error | It is not — `data/cohort/` is ignored wholesale. Corrected to name what actually produces it. |
+
+### Verification
+
+`tests/test_dashboard_reader.py` runs the real app in Streamlit's headless test runtime against real records and asserts on rendered text. 23 checks over 6 scenarios:
+
+1. Cold start: boots, offers records, states its adjunctive status and its commit.
+2. Record `544` (67M, anterior): escalation tier, `G1_CONTIGUOUS_STE`, the V2 demographic cut-point, the qualifying pair rows, 12 of 12 leads measured.
+3. Record `10038`: routine tier, no guardrail fired, and the page refusing to read that as a normal ECG.
+4. Record `10231`: escalates on rate with a wide QRS and **no** contiguous elevation. The tier alone would not distinguish this from an occlusion, so the panel that says "no contiguous pair meets" is the point of the case.
+5. A sample record with no demographics: the page states the fallback and holds V2 to 0.15 mV.
+6. Overriding age to 35 on `544` moves the V2/V3 cut-point to 0.25 mV on screen.
+
+Full suite: 10 of 10 test scripts pass. `score_guardrails.py --fail-above 0.10` still exits 0 at 3/124 healthy escalations, unchanged — this section touched no rule.
+
+The rendered page was additionally checked in a browser, because the test runtime returns markdown source rather than a DOM and therefore cannot see the HTML-block defect above.
+
+### Known limits of what was done here
+
+- **The reader cannot be used blind.** Ground-truth labels are in the picker by decision. A blinded reading mode is a different tool and would have to withhold the label from the same process that computes the tier.
+- **The old tier vocabulary is still alive underneath.** `risk_fusion.py` continues to emit `LOW_RISK`/`MODERATE_RISK`/`HIGH_RISK`; the reader ignores them and reads `final_tier`. P0-5 removes the duplicate.
+- **Traceability stops at the screen.** The footer names the commit; the SBAR note still carries no timestamp, model version or SHA. P0-5.
+- **One finding per satisfied pair remains.** Record `544` prints three anterior lines saying "high suspicion of acute LAD occlusion" for V1/V2, V2/V3 and V3/V4. Collapsing to one line per territory is P0-5, and it was not done here because grouping in the view would let the screen and the note drift apart.
+- **`tests/test_risk_fusion.py` rewrites the tracked `docs/figures/09_risk_explainability.png` on every run**, so running the suite dirties the working tree. A test that regenerates a versioned artefact should write to a scratch path, or become an explicit generator command.
+
+### Reproduction
+
+```bash
+# From the project root - .streamlit/config.toml is read from the working directory
+streamlit run src/dashboard/app.py
+
+# The reader's rendered output, against real records
+python tests/test_dashboard_reader.py
+```
+
+### Next (P0-5)
+
+The screen now agrees with the rule. The note it exports does not yet agree with a version, and `effective_risk_pct = max(base, 85)` still fabricates a number no measurement produced. P0-5 removes the duplicate tier vocabulary, makes the report traceable, and collapses the per-pair findings.
+
+---
+
 ## Engineering Milestones
 
 - [x] Phase 1: Environment, Ingestion, DSP Bandpass Filter, SQI Quality Gate
@@ -655,7 +747,8 @@ The report is now traceable to a rule id and a cut-point, but not yet to a *vers
 - [x] **Hardening Sprint P0-1: Guardrail Layer Audit — population verification, $N = 251$ (Section 11)**
 - [x] **Hardening Sprint P0-3: ST measured at the J point against a PR-segment baseline; QRS/ST plausibility guards; cohort reproducible from tracked inputs — healthy escalation 25.8% → 3.2% with the rules unchanged (Section 12)**
 - [x] **Hardening Sprint P0-2: Contiguous-lead STEMI criteria with sex/age-specific V2–V3 cut-points, stable `rule_id`s and `ESCALATE`/`REVIEW` severities — healthy escalation 3.2% → 2.4%, held-out folds 0/20 (Section 13)**
+- [x] **Interface rebuild: clinician dashboard replaced with a single triage reader that shows the per-lead measurements, the cut-point applied and the pairs that satisfied the criterion — 23 rendered-output checks (Section 14)**
 - [ ] **Hardening Sprint P0-4: Comparable dual-engine cohorts and reconciled benchmark metrics**
 - [ ] **Hardening Sprint P0-5: Traceable SBAR report and a single source of truth for triage tiers**
-- [ ] **Phase 6: Interactive Clinician Dashboard (Streamlit)**
+- [x] **Phase 6: Interactive Clinician Dashboard (Streamlit)** — rebuilt and runtime-verified, see Section 14
 - [ ] **Phase 7: ESP32 Hardware Streaming Integration**

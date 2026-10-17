@@ -32,5 +32,11 @@ artifacts/
 .DS_Store
 Thumbs.db
 
-# Streamlit temporary state
-.streamlit/
+# Streamlit temporary state.
+#
+# `config.toml` is the exception and is tracked: it pins the light theme that
+# src/dashboard/styles.css is built against. Without it the reader renders dark
+# widgets on a light page on any dark-mode machine. Git does not honour a
+# negation inside an ignored directory, so the contents are ignored instead.
+.streamlit/*
+!.streamlit/config.toml
