@@ -1,7 +1,12 @@
 """
-CardioSense - Calibrated Multi-Model Risk Fusion & Explainability
-Combines the interpretable biomarker classifier and deep 1D-CNN into a unified
-clinical risk score (0-100%) and localizes the culprit coronary artery territory.
+CardioSense - Multi-Model Probability Fusion & Explainability
+
+Combines an interpretable biomarker classifier and a deep 1D-CNN
+using equal-weight probability averaging. Reports a composite model
+score and estimated coronary territory based on extracted ECG features.
+
+The composite score is not necessarily calibrated and is not a
+clinically validated estimate of acute coronary event probability.
 """
 
 import sys
@@ -102,7 +107,8 @@ class CardioSenseEnsemble:
             logits = self.cnn_model(wave_tensor)
             p_cnn = float(torch.softmax(logits, dim=1)[0, 1].item())
 
-        # 4. Calibrated Ensemble Fusion (Equal 50/50 Weighting)
+        # 4. Equal-weight probability fusion.
+        # Averaging the model outputs does not guarantee calibration.
         p_composite = 0.5 * p_rf + 0.5 * p_cnn
         risk_score_pct = round(p_composite * 100.0, 1)
 
