@@ -75,9 +75,10 @@ class ClinicalTriageEngine:
         return self._assign_tier(ensemble_result["risk_score_pct"], findings)
 
     # ---------------------------------------------------------
-    # Block 4: Guardrail 1 - Contiguous-Lead ST Elevation (Grouped)
+    # Block 4: Guardrail 1 - Contiguous-Lead ST Elevation (Grouped with Provenance)
     # What it does: Identifies contiguous pairs clearing Fourth UDMI cut-points.
-    # How it does it: Groups hits by territory to prevent duplicate report lines.
+    # How it does it: Groups hits by territory and includes the guideline basis
+    #                 (e.g., age/sex specific cut-points) in the detail string.
     # ---------------------------------------------------------
     def _check_st_elevation(
         self, st_by_lead: dict[str, float], age: float | None, sex: str | None
@@ -95,10 +96,11 @@ class ClinicalTriageEngine:
         for territory, pairs in by_territory.items():
             culprit = territory.rsplit("(", 1)[-1].rstrip(")")
             pair_summaries = [
-                f"{p.lead_a}/{p.lead_b} ({p.st_a_mv:+.3f}/{p.st_b_mv:+.3f} mV)"
+                f"{p.lead_a}/{p.lead_b}: {p.st_a_mv:+.3f} mV and {p.st_b_mv:+.3f} mV "
+                f"(cut-points: {p.basis_a}; {p.basis_b})"
                 for p in pairs
             ]
-            pairs_str = ", ".join(pair_summaries)
+            pairs_str = "; ".join(pair_summaries)
 
             findings.append(
                 Finding(
@@ -106,7 +108,7 @@ class ClinicalTriageEngine:
                     severity=ESCALATE,
                     territory=territory,
                     detail=(
-                        f"STEMI criteria met in contiguous leads: {pairs_str}. "
+                        f"STEMI criteria met in contiguous leads {pairs_str}. "
                         f"High suspicion of acute {culprit} occlusion."
                     ),
                 )
