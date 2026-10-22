@@ -19,7 +19,7 @@ However, real-world ECG analysis faces two major hurdles:
 1. **Noisy Signals**: Loose electrodes, patient shivering, and breathing drift produce artifacts that mimic heart attacks, causing false alarms and hospital overcrowding.
 2. **The "Black-Box" AI Dilemma**: Pure deep-learning models lack clinical interpretability. Clinicians cannot verify *why* a neural network triggered an alarm.
 
-**CardioSense bridges this gap** using a **dual-engine architecture**: pairing clinically certified cardiological measurements (ST elevation, J-point shifts, QRS duration, HRV) with raw deep waveform representations, gated by strict signal-quality checks.
+**CardioSense bridges this gap** using a **dual-engine architecture**: pairing clinically certified cardiological measurements (contiguous ST elevation at the J-point, QRS duration, HRV) with raw deep waveform representations, gated by strict signal-quality checks.
 
 ---
 
@@ -44,7 +44,7 @@ However, real-world ECG analysis faces two major hurdles:
          │  Engine A: Classical  │  Engine B: Deep Wave  │
          │  • R-Peak & HRV       │  • Multichannel 1D    │
          │  • Fiducial Landmark  │    ResNet / CNN       │
-         │  • ST Elevation @ J+60│  • Latent Repolar-    │
+         │  • ST Elevation @ J   │  • Latent Repolar-    │
          │  • QRS Duration       │    ization Dynamics   │
          └───────────┬───────────┴───────────┬───────────┘
                      │                       │
@@ -52,17 +52,18 @@ However, real-world ECG analysis faces two major hurdles:
                                  │
                                  ▼
         ┌─────────────────────────────────────────────────┐
-        │            2. Calibrated Risk Fusion            │
-        │  • Platt-Scaled Probability Calibration         │
-        │  • Explainability Layer (Lead & Segment XAI)    │
+        │         2. Risk Fusion & Guardrails             │
+        │  • Deterministic Fourth UDMI Contiguous Rules   │
+        │  • Age/Sex Precordial Cut-Points (V2-V3)        │
+        │  • Dual-Engine Probability Averaging            │
         └───────────────────────┬─────────────────────────┘
                                 │
                                 ▼
         ┌─────────────────────────────────────────────────┐
         │          3. Clinical Triage Interface           │
-        │  • Triage Routing: Routine | Review | Emergent  │
-        │  • Grounded LLM Clinical Summary (Guardrailed)  │
-        │  • Clinician Dashboard (Streamlit / FastAPI)    │
+        │  • Triage Routing: Routine | Review | Escalated │
+        │  • Auditable SBAR Clinical Note Generation      │
+        │  • Clinician Interface (FastAPI & Modern Web UI)│
         └─────────────────────────────────────────────────┘
 ```
 
@@ -78,7 +79,7 @@ However, real-world ECG analysis faces two major hurdles:
 ### 2. Deterministic Cardiological Biomarkers
 - **Zero-Phase Filtering (`filtfilt`)**: Eliminates respiration baseline wander with **0.0 ms phase delay**, preserving true PR and QT intervals.
 - **R-Peak Detector**: Derivative-squared energy transformation with dynamic thresholding and physiological refractory lockout.
-- **ST-Segment Deviation**: Pinpoints the **J-point** and quantifies microvolt shifts at **$J + 60\text{ ms}$** across all 12 leads relative to the isoelectric PR baseline (essential for STEMI criteria).
+- **ST-Segment Deviation**: Pinpoints the **J-point** relative to the flat PR isoelectric baseline and enforces **contiguous-lead criteria** with age/sex specific cut-points from the Fourth Universal Definition of Myocardial Infarction.
 
 ### 3. Dual-Model Decision Support
 - Combines interpretable clinical rules (Random Forest with Platt calibration, **0.853 ROC-AUC**) with end-to-end 1D convolutional neural networks directly on raw multichannel voltages (**0.860 ROC-AUC**, **92.6% Specificity**).
@@ -93,20 +94,21 @@ However, real-world ECG analysis faces two major hurdles:
 ```text
 HT-project/
 ├── data/
-│   ├── raw/             # Local PTB-XL database metadata
+│   ├── raw/             # Local PTB-XL database metadata (gitignored)
 │   ├── samples/         # Sample 100 Hz 12-lead records
-│   ├── cohort/          # Balanced 300-patient training cohort
+│   ├── cohort/          # Balanced 300-patient training cohort (gitignored)
 │   └── processed/       # Tabular extracted clinical features CSV
 ├── src/
 │   ├── data/            # PTB-XL automated ingestion & cohort downloader
 │   ├── dsp/             # Zero-phase filters & Signal Quality Index (SQI)
 │   ├── features/        # R-peak detector, HRV, J-point ST landmarking, batch extractor
 │   ├── models/          # Interpretable Random Forest & PyTorch 1D-CNN
-│   └── triage/          # Risk fusion & explainability (XAI)
-├── tests/               # Visual verification & unit tests
+│   └── triage/          # Risk fusion, lead geometry, and clinical triage rules
+├── tests/               # Unit, visual, and guardrail regression test suite
 ├── docs/
 │   ├── ENGINEERING_LOG.md  # Detailed clinical lab journal & verification data
-│   └── figures/            # Clinical verification plots (Figures 01 to 08)
+│   └── figures/            # Clinical verification plots (Figures 01 to 09)
+├── pyproject.toml       # Package setup & dependency management
 ├── requirements.txt     # Python dependencies
 └── README.md
 ```
@@ -127,25 +129,31 @@ cd HT-project
 # Linux/macOS:
 source .venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install package in editable mode with development/test dependencies
+pip install -e ".[dev]"
 ```
 
 ### 2. Run Verification Tests
 ```bash
-# 1. Inspect raw 12-lead waveforms
+# 1. Run unit test suite (Signal processing filters and deterministic rules)
+pytest tests/test_triage_rules.py tests/test_filters_unit.py -v
+
+# 2. Run 29-assertion clinical guardrail test
+python tests/test_triage.py
+
+# 3. Inspect raw 12-lead waveforms
 python tests/test_inspect_ecg.py
 
-# 2. Verify zero-phase baseline filter
+# 4. Verify zero-phase baseline filter
 python tests/test_filters.py
 
-# 3. Test R-peak detector and HRV metrics
+# 5. Test R-peak detector and HRV metrics
 python tests/test_r_peaks.py
 
-# 4. Run Signal Quality Index (SQI) checks
+# 6. Run Signal Quality Index (SQI) checks
 python tests/test_sqi.py
 
-# 5. Run fiducial landmarking and ST analysis
+# 7. Run fiducial landmarking and ST analysis
 python tests/test_fiducials.py
 ```
 
