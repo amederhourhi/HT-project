@@ -1,12 +1,7 @@
 """
 CardioSense - Multi-Model Probability Fusion & Explainability
-
-Combines an interpretable biomarker classifier and a deep 1D-CNN
-using equal-weight probability averaging. Reports a composite model
-score and estimated coronary territory based on extracted ECG features.
-
-The composite score is not necessarily calibrated and is not a
-clinically validated estimate of acute coronary event probability.
+Combines an interpretable biomarker classifier (Random Forest) and deep 1D-CNN
+using probability averaging, and assigns a unified baseline triage tier.
 """
 
 from pathlib import Path
@@ -70,9 +65,9 @@ class CardioSenseEnsemble:
 
     # ---------------------------------------------------------
     # Block 2: End-to-End Prediction Execution
-    # What it does: Extracts features, scores through both engines, and averages probability.
-    # How it does it: Evaluates SQI gate first, passes tabular features to RF, normalized
-    #                 12-lead waveforms to 1D-CNN, and computes composite risk.
+    # What it does: Runs quality gate, extracts features, and runs dual inference.
+    # How it does it: Evaluates SQI gate first, passes tabular features to RF,
+    #                 normalized 12-lead waveforms to 1D-CNN, and computes composite risk.
     # ---------------------------------------------------------
     def predict(self, raw_signals, fs=100.0, lead_names=None, age=None, sex=None):
         if lead_names is None:
@@ -112,18 +107,26 @@ class CardioSenseEnsemble:
         p_composite = 0.5 * p_rf + 0.5 * p_cnn
         risk_score_pct = round(p_composite * 100.0, 1)
 
-        # 5. Risk Stratification Tier
-        if p_composite < 0.35:
-            risk_tier = "LOW_RISK"
-            triage_action = "Routine Follow-up (Normal / Sub-acute)"
-        elif p_composite < 0.65:
-            risk_tier = "MODERATE_RISK"
-            triage_action = "Clinician Review (Borderline / Intermediate Suspicion)"
+        # ---------------------------------------------------------
+        # Block 3: Unified Statistical Triage Tier
+        # What it does: Maps composite risk score to standard tier constants.
+        # How it does it: Uses identical TIER_1..3 vocabulary as triage_rules.py.
+        # ---------------------------------------------------------
+        if risk_score_pct < 35.0:
+            unified_tier = "TIER_1_ROUTINE"
+            triage_action = "Routine Follow-up (Normal / Sub-acute findings)"
+        elif risk_score_pct < 65.0:
+            unified_tier = "TIER_2_REVIEW"
+            triage_action = "Urgent Clinician Review (Intermediate Risk / Borderline findings)"
         else:
-            risk_tier = "HIGH_RISK"
-            triage_action = "Urgent Emergency Escalation (Acute Coronary Syndrome Suspected)"
+            unified_tier = "TIER_3_ESCALATION"
+            triage_action = "Immediate Emergency Escalation (High Risk Infarction Suspected)"
 
-        # 6. Anatomical Coronary Artery Territory Attribution
+        # ---------------------------------------------------------
+        # Block 4: Regional Coronary Territory Attribution
+        # What it does: Summarizes regional ST shifts across vascular beds.
+        # How it does it: Inspects maximum ST shift in LAD, RCA, and LCx leads.
+        # ---------------------------------------------------------
         territories = {
             "Anterior / Septal (LAD)": {
                 "artery": "Left Anterior Descending (LAD)",
@@ -152,7 +155,8 @@ class CardioSenseEnsemble:
         return {
             "status": "success",
             "risk_score_pct": risk_score_pct,
-            "risk_tier": risk_tier,
+            "statistical_tier": unified_tier,
+            "risk_tier": unified_tier,  # Kept for backward compatibility
             "triage_action": triage_action,
             "engine_probabilities": {
                 "interpretable_rf": round(p_rf, 3),
