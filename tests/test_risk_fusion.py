@@ -6,6 +6,7 @@ validates coronary territory ischemic attribution without dirtying git.
 
 import argparse
 from pathlib import Path
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import wfdb

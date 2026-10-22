@@ -12,15 +12,18 @@ __pycache__/
 dist/
 build/
 
-# Local raw datasets & models (too big for GitHub)
+# Local raw datasets (too large for git)
 data/raw/
 data/ptbxl/
 data/cohort/
-data/samples/
-models/checkpoints/
-*.pt
+
+# Track sample records, ignore other local sample scratch
+data/samples/*
+!data/samples/records100/
+
+# Model checkpoints: Track baseline weights (~1.7 MB total for zero-setup execution)
+# Ignore ad-hoc or large export formats
 *.onnx
-*.joblib
 *.pkl
 
 # Generated evaluation artifacts (recreate with src/evaluation/score_guardrails.py)
@@ -31,12 +34,3 @@ artifacts/
 .idea/
 .DS_Store
 Thumbs.db
-
-# Streamlit temporary state.
-#
-# `config.toml` is the exception and is tracked: it pins the light theme that
-# src/dashboard/styles.css is built against. Without it the reader renders dark
-# widgets on a light page on any dark-mode machine. Git does not honour a
-# negation inside an ignored directory, so the contents are ignored instead.
-.streamlit/*
-!.streamlit/config.toml
