@@ -736,19 +736,37 @@ The screen now agrees with the rule. The note it exports does not yet agree with
 
 ---
 
-## Engineering Milestones
+## 9. Honest Evaluation Snapshot – October 2026 (Updated)
 
-- [x] Phase 1: Environment, Ingestion, DSP Bandpass Filter, SQI Quality Gate
-- [x] Phase 2: R-Peak Detector, Fiducial Landmarking, and Interpretable Baseline
-- [x] Phase 3: Lightweight 1D-CNN Waveform Model (45k params, Sub-10ms Inference)
-- [x] Refinement Sprint: Physiological Q-Onset Detection & Triage Threshold Tuning (AUC: 0.861)
-- [x] Phase 4: Calibrated Ensemble Risk Fusion & Explainability (Ensemble AUC: 0.897)
-- [x] Phase 5: Safety-Guardrailed Clinical Triage & SBAR Clinical Reports (2-record demonstration)
-- [x] **Hardening Sprint P0-1: Guardrail Layer Audit — population verification, $N = 251$ (Section 11)**
-- [x] **Hardening Sprint P0-3: ST measured at the J point against a PR-segment baseline; QRS/ST plausibility guards; cohort reproducible from tracked inputs — healthy escalation 25.8% → 3.2% with the rules unchanged (Section 12)**
-- [x] **Hardening Sprint P0-2: Contiguous-lead STEMI criteria with sex/age-specific V2–V3 cut-points, stable `rule_id`s and `ESCALATE`/`REVIEW` severities — healthy escalation 3.2% → 2.4%, held-out folds 0/20 (Section 13)**
-- [x] **Interface rebuild: clinician dashboard replaced with a single triage reader that shows the per-lead measurements, the cut-point applied and the pairs that satisfied the criterion — 23 rendered-output checks (Section 14)**
-- [ ] **Hardening Sprint P0-4: Comparable dual-engine cohorts and reconciled benchmark metrics**
-- [ ] **Hardening Sprint P0-5: Traceable SBAR report and a single source of truth for triage tiers**
-- [x] **Phase 6: Interactive Clinician Dashboard (Streamlit)** — rebuilt and runtime-verified, see Section 14
-- [ ] **Phase 7: ESP32 Hardware Streaming Integration**
+All numbers below come from `src/evaluation/full_report.py` run on the official PTB-XL test folds (9–10) after SQI filtering.
+
+### Dataset
+- Records after SQI: 251 (124 Normal, 127 Infarction)
+- Official test fold: 52 records (20 Normal, 32 Infarction)
+
+### Side-by-side Model Performance (Test folds)
+
+| Metric                        | Random Forest | 1D-CNN   |
+|-------------------------------|---------------|----------|
+| ROC-AUC                       | 0.739         | **0.860**|
+| Sensitivity @ 0.50            | 78.1%         | 65.7%    |
+| Specificity @ 0.50            | 50.0%         | **92.6%**|
+| Sensitivity @ 0.35 (triage)   | 90.6%         | 74.3%    |
+| Specificity @ 0.35 (triage)   | 35.0%         | **88.9%**|
+
+### Deterministic Guardrail Layer (Test folds only)
+- Healthy records escalated to TIER_3: **0 / 20** (0%)
+- Infarction records escalated: 6 / 32 (18.8%)
+- Rules that fired: G1_CONTIGUOUS_STE (4), G2_SEVERE_TACHYCARDIA (2), G3_WIDE_QRS (4)
+
+### Observations
+- The 1D-CNN currently has clearly better discrimination and specificity.
+- The Random Forest is more sensitive but less specific.
+- The guardrail layer is highly specific (no false escalations) but low-sensitivity on its own. This is the intended behaviour of a conservative safety net.
+- Overall system performance is still limited by the small test set size (N=52).
+
+### Explicit Limitations
+- Very small official test fold.
+- Binary label (any infarction-family code vs NORM) is not the same as acute occlusion MI confirmed by angiography.
+- No external validation set.
+- Fusion + full end-to-end cascade metrics are not yet reported in this snapshot.
