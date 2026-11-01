@@ -1,178 +1,160 @@
-"""
-CardioSense - 1D-CNN Deep Waveform Training
-Trains CardioNet1D on raw 12-lead ECG time-series using official PTB-XL folds
-and plots training/validation convergence curves.
-"""
+"""Train CardioNet1D with separate train, validation, and test folds."""
 
+import copy
+import random
 import sys
 from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).resolve().parents[2]
-sys.path.append(str(project_root))
-
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    brier_score_loss,
+    confusion_matrix,
+    roc_auc_score,
+)
 from torch.utils.data import DataLoader
-from sklearn.metrics import accuracy_score, recall_score, confusion_matrix, roc_auc_score
 
-from src.models.ecg_dataset import ECGDataset
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from src.models.ecg_cnn import CardioNet1D
+from src.models.ecg_dataset import ECGDataset
 
-# Set reproducible random seed
-torch.manual_seed(42)
-np.random.seed(42)
+SEED = 42
+TRAIN_FOLDS = list(range(1, 9))
+VAL_FOLDS = [9]
+TEST_FOLDS = [10]
 
 
-# ---------------------------------------------------------
-# Block 1: Evaluation Helper Function
-# ---------------------------------------------------------
-def evaluate_model(model, dataloader, criterion, device):
-    """Evaluates test loss, accuracy, sensitivity, specificity, and ROC-AUC."""
+def seed_everything(seed=SEED):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def evaluate(model, loader, criterion, device):
     model.eval()
-    total_loss = 0.0
-    all_preds, all_labels, all_probs = [], [], []
+    labels, probabilities = [], []
+    loss_sum = 0.0
 
-    with torch.no_grad():
-        for waves, labels in dataloader:
-            waves, labels = waves.to(device), labels.to(device)
+    with torch.inference_mode():
+        for waves, targets in loader:
+            waves = waves.to(device)
+            targets = targets.to(device)
             logits = model(waves)
-            loss = criterion(logits, labels)
-            total_loss += loss.item() * len(labels)
+            loss_sum += criterion(logits, targets).item() * len(targets)
+            probabilities.extend(torch.softmax(logits, dim=1)[:, 1].cpu().tolist())
+            labels.extend(targets.cpu().tolist())
 
-            probs = torch.softmax(logits, dim=1)[:, 1]
-            preds = torch.argmax(logits, dim=1)
+    y = np.asarray(labels, dtype=int)
+    p = np.asarray(probabilities, dtype=float)
+    if y.size == 0:
+        raise ValueError("Evaluation split contains no records.")
 
-            all_probs.extend(probs.cpu().numpy())
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+    predicted = (p >= 0.5).astype(int)
+    tn, fp, fn, tp = confusion_matrix(y, predicted, labels=[0, 1]).ravel()
 
-    avg_loss = total_loss / len(dataloader.dataset)
-    acc = accuracy_score(all_labels, all_preds)
-    sens = recall_score(all_labels, all_preds, pos_label=1)
-    
-    cm = confusion_matrix(all_labels, all_preds)
-    tn, fp, fn, tp = cm.ravel()
-    spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
-    auc = roc_auc_score(all_labels, all_probs)
-
-    metrics = {
-        "loss": avg_loss,
-        "acc": acc,
-        "sensitivity": sens,
-        "specificity": spec,
-        "auc": auc,
-        "cm": (tn, fp, fn, tp),
+    return {
+        "loss": loss_sum / len(y),
+        "accuracy": accuracy_score(y, predicted),
+        "sensitivity": tp / (tp + fn) if tp + fn else float("nan"),
+        "specificity": tn / (tn + fp) if tn + fp else float("nan"),
+        "roc_auc": roc_auc_score(y, p) if len(np.unique(y)) == 2 else float("nan"),
+        "pr_auc": average_precision_score(y, p) if len(np.unique(y)) == 2 else float("nan"),
+        "brier": brier_score_loss(y, p),
+        "confusion_matrix": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
     }
-    return metrics
 
 
-# ---------------------------------------------------------
-# Block 2: Training Loop
-# ---------------------------------------------------------
-def train_cardionet(epochs=20, batch_size=16, lr=1e-3):
+def train_cardionet(epochs=20, batch_size=16, lr=1e-3, patience=5):
+    seed_everything()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"\nTraining CardioNet1D on device: {device}")
+    manifest = ROOT / "data" / "cohort" / "cohort_manifest.csv"
+    cohort_dir = ROOT / "data" / "cohort"
+    checkpoint_dir = ROOT / "models" / "checkpoints"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    # Dataset paths
-    manifest_csv = project_root / "data" / "cohort" / "cohort_manifest.csv"
-    cohort_dir = project_root / "data" / "cohort"
-    checkpoints_dir = project_root / "models" / "checkpoints"
-    figures_dir = project_root / "docs" / "figures"
-    checkpoints_dir.mkdir(parents=True, exist_ok=True)
-    figures_dir.mkdir(parents=True, exist_ok=True)
+    train_data = ECGDataset(manifest, cohort_dir, folds=TRAIN_FOLDS)
+    val_data = ECGDataset(manifest, cohort_dir, folds=VAL_FOLDS)
+    test_data = ECGDataset(manifest, cohort_dir, folds=TEST_FOLDS)
 
-    # Official PTB-XL Folds (Train: 1-8, Test: 9-10)
-    train_dataset = ECGDataset(manifest_csv, cohort_dir, folds=list(range(1, 9)))
-    test_dataset = ECGDataset(manifest_csv, cohort_dir, folds=[9, 10])
+    for name, dataset in (("train", train_data), ("validation", val_data), ("test", test_data)):
+        if not len(dataset):
+            raise ValueError(f"No usable ECG records in {name} split. Check cohort files.")
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    # Guard against duplicated ECG identifiers across splits.
+    ids = [{str(record["ecg_id"]) for record in ds.records}
+           for ds in (train_data, val_data, test_data)]
+    if ids[0] & ids[1] or ids[0] & ids[2] or ids[1] & ids[2]:
+        raise ValueError("ECG identifier overlap detected across folds.")
 
-    print(f"Cohort size: {len(train_dataset)} Train ECGs | {len(test_dataset)} Test ECGs")
+    print(f"Device: {device}")
+    print(f"Records: train={len(train_data)}, val={len(val_data)}, test={len(test_data)}")
+
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
     model = CardioNet1D(in_channels=12, num_classes=2).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-2)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
-    history = {"train_loss": [], "test_loss": [], "test_acc": []}
+    best_loss = float("inf")
+    best_weights = None
+    best_epoch = 0
+    stagnant_epochs = 0
 
-    print("\nStarting Training Epochs...")
     for epoch in range(1, epochs + 1):
         model.train()
-        train_loss = 0.0
-
-        for waves, labels in train_loader:
-            waves, labels = waves.to(device), labels.to(device)
-
-            optimizer.zero_grad()
-            logits = model(waves)
-            loss = criterion(logits, labels)
+        running_loss = 0.0
+        for waves, targets in train_loader:
+            waves, targets = waves.to(device), targets.to(device)
+            optimizer.zero_grad(set_to_none=True)
+            loss = criterion(model(waves), targets)
             loss.backward()
             optimizer.step()
-
-            train_loss += loss.item() * len(labels)
+            running_loss += loss.item() * len(targets)
 
         scheduler.step()
-        train_loss /= len(train_dataset)
+        val_metrics = evaluate(model, val_loader, criterion, device)
+        train_loss = running_loss / len(train_data)
+        print(f"Epoch {epoch:02d}: train_loss={train_loss:.4f}, "
+              f"val_loss={val_metrics['loss']:.4f}, val_auc={val_metrics['roc_auc']:.4f}")
 
-        # Evaluate on test set
-        test_metrics = evaluate_model(model, test_loader, criterion, device)
-        history["train_loss"].append(train_loss)
-        history["test_loss"].append(test_metrics["loss"])
-        history["test_acc"].append(test_metrics["acc"])
+        if val_metrics["loss"] < best_loss - 1e-5:
+            best_loss = val_metrics["loss"]
+            best_epoch = epoch
+            best_weights = copy.deepcopy(model.state_dict())
+            stagnant_epochs = 0
+        else:
+            stagnant_epochs += 1
+            if stagnant_epochs >= patience:
+                print(f"Early stopping at epoch {epoch}.")
+                break
 
-        if epoch % 5 == 0 or epoch == 1 or epoch == epochs:
-            print(f"  Epoch [{epoch:2d}/{epochs}] - Train Loss: {train_loss:.4f} | Test Loss: {test_metrics['loss']:.4f} | Test Acc: {test_metrics['acc']*100:.1f}%")
+    model.load_state_dict(best_weights)
+    model.eval()
 
-    # Final Clinical Evaluation
-    final = evaluate_model(model, test_loader, criterion, device)
-    tn, fp, fn, tp = final["cm"]
+    # Test fold is evaluated only after training and checkpoint selection.
+    test_metrics = evaluate(model, test_loader, criterion, device)
+    print(f"\nBest epoch: {best_epoch} (validation loss={best_loss:.4f})")
+    print("Independent fold-10 test results:")
+    for name, value in test_metrics.items():
+        print(f"  {name}: {value}")
 
-    print("\n" + "=" * 55)
-    print("  CARDIOSENSE 1D-CNN (DEEP WAVEFORM) - TEST RESULTS  ")
-    print("=" * 55)
-    print(f"Accuracy               : {final['acc'] * 100:.1f}%")
-    print(f"Sensitivity (Catch MI) : {final['sensitivity'] * 100:.1f}%")
-    print(f"Specificity (No False) : {final['specificity'] * 100:.1f}%")
-    print(f"ROC-AUC Score          : {final['auc']:.3f}")
-    print("\nConfusion Matrix:")
-    print(f"  [TN: {tn:2d} | FP: {fp:2d}] (True Normal vs False Alarm)")
-    print(f"  [FN: {fn:2d} | TP: {tp:2d}] (Missed MI vs Detected MI)")
-    print("=" * 55)
-
-    # Plot Figure 08: Training Convergence Curves
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5))
-
-    ax1.plot(range(1, epochs + 1), history["train_loss"], label="Train Loss", color="navy", linewidth=1.8)
-    ax1.plot(range(1, epochs + 1), history["test_loss"], label="Test Loss", color="crimson", linewidth=1.8)
-    ax1.set_title("Cross-Entropy Loss vs Epochs", fontsize=11, fontweight="bold")
-    ax1.set_xlabel("Epoch", fontsize=10)
-    ax1.set_ylabel("Loss", fontsize=10)
-    ax1.grid(True, linestyle="--", alpha=0.5)
-    ax1.legend()
-
-    ax2.plot(range(1, epochs + 1), [a * 100 for a in history["test_acc"]], label="Test Accuracy", color="forestgreen", linewidth=1.8)
-    ax2.set_title("Test Accuracy (%) on Unseen Folds", fontsize=11, fontweight="bold")
-    ax2.set_xlabel("Epoch", fontsize=10)
-    ax2.set_ylabel("Accuracy (%)", fontsize=10)
-    ax2.grid(True, linestyle="--", alpha=0.5)
-    ax2.legend()
-
-    plt.tight_layout()
-    fig8_path = figures_dir / "08_cnn_training_curve.png"
-    plt.savefig(fig8_path, dpi=150)
-    print(f"\n[Saved CNN Training figure to: {fig8_path.relative_to(project_root)}]")
-    plt.close()
-
-    # Save model checkpoint
-    save_path = checkpoints_dir / "ecg_cnn.pt"
+    # Keep the current production checkpoint untouched until results are reviewed.
+    save_path = checkpoint_dir / "ecg_cnn_fold10_candidate.pt"
     torch.save(model.state_dict(), save_path)
-    print(f"Deep learning checkpoint saved to: {save_path.relative_to(project_root)}")
+    print(f"Saved checkpoint: {save_path}")
+    return test_metrics
 
 
 if __name__ == "__main__":
-    train_cardionet(epochs=20, batch_size=16, lr=1e-3)
+    train_cardionet()

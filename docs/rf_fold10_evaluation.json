@@ -1,0 +1,71 @@
+{
+  "protocol": "PTB-XL folds 1-8 train / 9 validation / 10 test",
+  "candidate_checkpoint": "C:\\Projects\\HT-project\\models\\checkpoints\\interpretable_model_fold10_candidate.joblib",
+  "features": [
+    "heart_rate_bpm",
+    "mean_rr_sec",
+    "sdnn_ms",
+    "rmssd_ms",
+    "qrs_duration_ms",
+    "max_st_elevation_mv",
+    "max_st_depression_mv",
+    "st_anterior_max",
+    "st_inferior_max",
+    "st_lateral_max",
+    "st_I",
+    "st_II",
+    "st_III",
+    "st_AVR",
+    "st_AVL",
+    "st_AVF",
+    "st_V1",
+    "st_V2",
+    "st_V3",
+    "st_V4",
+    "st_V5",
+    "st_V6",
+    "overall_sqi"
+  ],
+  "model": "CalibratedClassifierCV(RandomForestClassifier, sigmoid, cv=5)",
+  "validation": {
+    "records": 28,
+    "positives": 18,
+    "threshold": 0.5,
+    "accuracy": 0.7142857142857143,
+    "sensitivity": 0.6111111111111112,
+    "specificity": 0.9,
+    "roc_auc": 0.8055555555555555,
+    "pr_auc": 0.9119091120902716,
+    "brier": 0.1960922152890255,
+    "log_loss": 0.5805213439645174,
+    "confusion_matrix": {
+      "tn": 9,
+      "fp": 1,
+      "fn": 7,
+      "tp": 11
+    }
+  },
+  "test": {
+    "records": 24,
+    "positives": 14,
+    "threshold": 0.5,
+    "accuracy": 0.6666666666666666,
+    "sensitivity": 0.5714285714285714,
+    "specificity": 0.8,
+    "roc_auc": 0.7357142857142858,
+    "pr_auc": 0.8577936944008373,
+    "brier": 0.21100867149732605,
+    "log_loss": 0.6113566703182792,
+    "confusion_matrix": {
+      "tn": 8,
+      "fp": 2,
+      "fn": 6,
+      "tp": 8
+    }
+  },
+  "limitations": [
+    "Small test cohort",
+    "No external validation",
+    "0.5 threshold not clinically validated"
+  ]
+}

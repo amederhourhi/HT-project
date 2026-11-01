@@ -1,199 +1,133 @@
-"""
-CardioSense - Interpretable Baseline Classifier Training
-Trains and calibrates a Random Forest on extracted clinical features
-using official PTB-XL stratified train/test folds (Folds 1-8: Train, 9-10: Test).
-Reports both standard diagnostic and emergency triage operating points.
-"""
+"""Train and evaluate CardioSense's calibrated Random Forest baseline.
 
-import sys
+PTB-XL fold protocol: 1-8 training, 9 validation, 10 final test.
+This script does not overwrite the deployed model checkpoint.
+"""
 from pathlib import Path
-
-# Add project root to sys.path
-project_root = Path(__file__).resolve().parents[2]
-sys.path.append(str(project_root))
-
-import joblib
-import matplotlib.pyplot as plt
+import json
 import numpy as np
 import pandas as pd
+import joblib
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
-    recall_score,
-    roc_auc_score,
-    roc_curve,
-)
+from sklearn.metrics import (accuracy_score, average_precision_score, brier_score_loss,
+                             confusion_matrix, log_loss, roc_auc_score)
 
 from src.features.extract_features import FEATURE_COLUMNS
 
-
-# ---------------------------------------------------------
-# Block 1: Load Clinical Features & Official Folds
-# ---------------------------------------------------------
-def load_train_test_data(features_csv):
-    """Splits data strictly using PTB-XL official benchmark folds."""
-    df = pd.read_csv(features_csv)
-
-    feature_cols = [c for c in FEATURE_COLUMNS if c in df.columns]
-
-    # Official PTB-XL split: Folds 1-8 for training, Folds 9-10 for testing
-    train_df = df[df["strat_fold"] <= 8]
-    test_df = df[df["strat_fold"] > 8]
-
-    X_train = train_df[feature_cols]
-    y_train = train_df["target_label"]
-
-    X_test = test_df[feature_cols]
-    y_test = test_df["target_label"]
-
-    return X_train, y_train, X_test, y_test, feature_cols
+ROOT = Path(__file__).resolve().parents[2]
+DATA = ROOT / "data" / "processed" / "clinical_features.csv"
+MODEL_PATH = ROOT / "models" / "checkpoints" / "interpretable_model_fold10_candidate.joblib"
+REPORT_PATH = ROOT / "docs" / "rf_fold10_evaluation.json"
 
 
-# ---------------------------------------------------------
-# Block 2: Train Model & Calibrate Probabilities
-# ---------------------------------------------------------
-def train_and_calibrate(X_train, y_train):
-    """
-    Trains a constrained Random Forest (max_depth=5 for full interpretability)
-    and applies Platt scaling (sigmoid calibration) so predicted probabilities
-    represent true clinical probabilities.
-    """
-    base_rf = RandomForestClassifier(
+def load_data(path=DATA):
+    frame = pd.read_csv(path)
+    required = [*FEATURE_COLUMNS, "strat_fold", "target_label"]
+    missing = sorted(set(required) - set(frame.columns))
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+    if frame["strat_fold"].isna().any() or not frame["strat_fold"].isin(range(1, 11)).all():
+        raise ValueError("strat_fold must contain integers 1 through 10")
+    if not frame["target_label"].isin([0, 1]).all():
+        raise ValueError("target_label must be binary (0 or 1)")
+    if frame[FEATURE_COLUMNS].isna().any().any():
+        raise ValueError("Feature columns contain missing values; resolve upstream before training")
+    for column in FEATURE_COLUMNS:
+        if not pd.api.types.is_numeric_dtype(frame[column]):
+            raise ValueError(f"Non-numeric feature: {column}")
+    if not np.isfinite(frame[FEATURE_COLUMNS].to_numpy(dtype=float)).all():
+        raise ValueError("Feature columns contain infinite values")
+
+    subsets = {
+        "train": frame.loc[frame["strat_fold"].between(1, 8)].copy(),
+        "validation": frame.loc[frame["strat_fold"] == 9].copy(),
+        "test": frame.loc[frame["strat_fold"] == 10].copy(),
+    }
+    for name, subset in subsets.items():
+        if subset.empty or subset["target_label"].nunique() != 2:
+            raise ValueError(f"{name} must contain both label classes")
+
+    # Identifiers are optional in exported feature tables, but when available
+    # they must not cross fold boundaries.
+    for identifier in ("ecg_id", "patient_id"):
+        if identifier in frame.columns:
+            for first, second in (("train", "validation"), ("train", "test"), ("validation", "test")):
+                a = set(subsets[first][identifier].dropna())
+                b = set(subsets[second][identifier].dropna())
+                if a & b:
+                    raise ValueError(f"{identifier} overlaps between {first} and {second}")
+
+    return subsets
+
+
+def metrics(labels, probs, threshold=0.5):
+    labels = np.asarray(labels, dtype=int)
+    probs = np.asarray(probs, dtype=float)
+    predicted = (probs >= threshold).astype(int)
+    tn, fp, fn, tp = confusion_matrix(labels, predicted, labels=[0, 1]).ravel()
+    return {
+        "records": int(len(labels)),
+        "positives": int(sum(labels)),
+        "threshold": float(threshold),
+        "accuracy": float(accuracy_score(labels, predicted)),
+        "sensitivity": float(tp / (tp + fn)),
+        "specificity": float(tn / (tn + fp)),
+        "roc_auc": float(roc_auc_score(labels, probs)),
+        "pr_auc": float(average_precision_score(labels, probs)),
+        "brier": float(brier_score_loss(labels, probs)),
+        "log_loss": float(log_loss(labels, probs, labels=[0, 1])),
+        "confusion_matrix": {"tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)},
+    }
+
+
+def main():
+    partitions = load_data()
+    train = partitions["train"]
+    val = partitions["validation"]
+    test = partitions["test"]
+    print(f"Records: train={len(train)}, val={len(val)}, test={len(test)}")
+
+    base = RandomForestClassifier(
         n_estimators=100,
         max_depth=5,
         class_weight="balanced",
         random_state=42,
+        n_jobs=-1,
     )
-    base_rf.fit(X_train, y_train)
+    # Cross-validated sigmoid calibration uses training records only.
+    calibrated = CalibratedClassifierCV(estimator=base, method="sigmoid", cv=5)
+    calibrated.fit(train[FEATURE_COLUMNS], train["target_label"])
 
-    # Probability calibration (Platt Scaling)
-    calibrated_model = CalibratedClassifierCV(estimator=base_rf, method="sigmoid", cv=5)
-    calibrated_model.fit(X_train, y_train)
+    val_probs = calibrated.predict_proba(val[FEATURE_COLUMNS])[:, 1]
+    val_metrics = metrics(val["target_label"], val_probs)
+    print("\nValidation fold-9 results (threshold 0.50):")
+    for key, value in val_metrics.items():
+        print(f"  {key}: {value}")
 
-    return base_rf, calibrated_model
+    # Frozen model and default threshold are evaluated exactly once here.
+    test_probs = calibrated.predict_proba(test[FEATURE_COLUMNS])[:, 1]
+    test_metrics = metrics(test["target_label"], test_probs)
+    print("\nIndependent fold-10 results (threshold 0.50):")
+    for key, value in test_metrics.items():
+        print(f"  {key}: {value}")
 
-
-# ---------------------------------------------------------
-# Block 3: Clinical Performance Evaluation (Dual Operating Points)
-# ---------------------------------------------------------
-def evaluate_clinical_metrics(model, X_test, y_test, triage_threshold=0.35):
-    """
-    Calculates cardiology metrics at two operating thresholds:
-    1. Standard Diagnostic (0.50)
-    2. Emergency Triage (0.35, high-sensitivity rule-out)
-    """
-    y_prob = model.predict_proba(X_test)[:, 1]
-
-    # 1. Standard Diagnostic Threshold (0.50)
-    y_pred_std = (y_prob >= 0.50).astype(int)
-    acc_std = accuracy_score(y_test, y_pred_std)
-    sens_std = recall_score(y_test, y_pred_std, pos_label=1)
-    cm_std = confusion_matrix(y_test, y_pred_std)
-    tn_std, fp_std, fn_std, tp_std = cm_std.ravel()
-    spec_std = tn_std / (tn_std + fp_std) if (tn_std + fp_std) > 0 else 0.0
-
-    # 2. Emergency Triage Screening Threshold (0.35)
-    y_pred_tri = (y_prob >= triage_threshold).astype(int)
-    acc_tri = accuracy_score(y_test, y_pred_tri)
-    sens_tri = recall_score(y_test, y_pred_tri, pos_label=1)
-    cm_tri = confusion_matrix(y_test, y_pred_tri)
-    tn_tri, fp_tri, fn_tri, tp_tri = cm_tri.ravel()
-    spec_tri = tn_tri / (tn_tri + fp_tri) if (tn_tri + fp_tri) > 0 else 0.0
-
-    auc = roc_auc_score(y_test, y_prob)
-
-    print("\n" + "=" * 65)
-    print("      CARDIOSENSE INTERPRETABLE MODEL - TEST BENCHMARK      ")
-    print("=" * 65)
-    print(f"Test Cohort Size             : {len(y_test)} patients (Official Folds 9-10)")
-    print(f"ROC-AUC Discrimination       : {auc:.3f}")
-    print("-" * 65)
-    print("STANDARD DIAGNOSTIC OPERATING POINT (Threshold = 0.50):")
-    print(f"  Accuracy                   : {acc_std * 100:.1f}%")
-    print(f"  Sensitivity (Catch MI)     : {sens_std * 100:.1f}%")
-    print(f"  Specificity (Rule-out Norm): {spec_std * 100:.1f}%")
-    print(f"  Confusion Matrix           : [TN: {tn_std:2d} | FP: {fp_std:2d}] (True Normal vs False Alarm)")
-    print(f"                               [FN: {fn_std:2d} | TP: {tp_std:2d}] (Missed MI vs Detected MI)")
-    print("-" * 65)
-    print(f"ACUTE EMERGENCY TRIAGE OPERATING POINT (Threshold = {triage_threshold:.2f}):")
-    print(f"  Accuracy                   : {acc_tri * 100:.1f}%")
-    print(f"  Sensitivity (Catch MI)     : {sens_tri * 100:.1f}%  <-- Prioritized for Triage")
-    print(f"  Specificity (Rule-out Norm): {spec_tri * 100:.1f}%")
-    print(f"  Confusion Matrix           : [TN: {tn_tri:2d} | FP: {fp_tri:2d}]")
-    print(f"                               [FN: {fn_tri:2d} | TP: {tp_tri:2d}]")
-    print("=" * 65)
-
-    return y_prob, auc
-
-
-# ---------------------------------------------------------
-# Block 4: Generate Verification Figures (06 & 07)
-# ---------------------------------------------------------
-def plot_and_save_figures(base_rf, feature_names, y_test, y_prob, auc_score, figures_dir):
-    """Plots and saves Feature Importance and ROC Curve to docs/figures/."""
-    figures_dir.mkdir(parents=True, exist_ok=True)
-
-    # --- Figure 06: Feature Importance Bar Chart ---
-    importances = base_rf.feature_importances_
-    sorted_idx = np.argsort(importances)[::-1][:10]  # Top 10 features
-
-    plt.figure(figsize=(10, 5))
-    plt.barh(
-        [feature_names[i] for i in sorted_idx][::-1],
-        importances[sorted_idx][::-1],
-        color="steelblue",
-        edgecolor="black",
-    )
-    plt.title("CardioSense - Top 10 Clinical Features Driving MI Detection", fontsize=12, fontweight="bold")
-    plt.xlabel("Gini Feature Importance", fontsize=10)
-    plt.grid(True, linestyle=":", alpha=0.6)
-    plt.tight_layout()
-
-    fig6_path = figures_dir / "06_feature_importance.png"
-    plt.savefig(fig6_path, dpi=150)
-    print(f"[Saved Feature Importance figure to: {fig6_path.relative_to(project_root)}]")
-    plt.close()
-
-    # --- Figure 07: Calibrated ROC Curve ---
-    fpr, tpr, _ = roc_curve(y_test, y_prob)
-    plt.figure(figsize=(7, 6))
-    plt.plot(fpr, tpr, color="crimson", linewidth=2.0, label=f"CardioSense (AUC = {auc_score:.3f})")
-    plt.plot([0, 1], [0, 1], color="gray", linestyle="--", label="Random Classifier (AUC = 0.500)")
-    plt.title("CardioSense - Calibrated ROC Curve (Test Set)", fontsize=12, fontweight="bold")
-    plt.xlabel("False Positive Rate (1 - Specificity)", fontsize=10)
-    plt.ylabel("True Positive Rate (Sensitivity)", fontsize=10)
-    plt.legend(loc="lower right")
-    plt.grid(True, linestyle="--", alpha=0.5)
-    plt.tight_layout()
-
-    fig7_path = figures_dir / "07_roc_curve.png"
-    plt.savefig(fig7_path, dpi=150)
-    print(f"[Saved ROC Curve figure to: {fig7_path.relative_to(project_root)}]")
-    plt.close()
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(calibrated, MODEL_PATH)
+    report = {
+        "protocol": "PTB-XL folds 1-8 train / 9 validation / 10 test",
+        "candidate_checkpoint": str(MODEL_PATH),
+        "features": list(FEATURE_COLUMNS),
+        "model": "CalibratedClassifierCV(RandomForestClassifier, sigmoid, cv=5)",
+        "validation": val_metrics,
+        "test": test_metrics,
+        "limitations": ["Small test cohort", "No external validation", "0.5 threshold not clinically validated"],
+    }
+    REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"\nSaved candidate: {MODEL_PATH}")
+    print(f"Saved evaluation: {REPORT_PATH}")
 
 
 if __name__ == "__main__":
-    dataset_file = project_root / "data" / "processed" / "clinical_features.csv"
-    checkpoints_dir = project_root / "models" / "checkpoints"
-    figures_directory = project_root / "docs" / "figures"
-    checkpoints_dir.mkdir(parents=True, exist_ok=True)
-
-    # 1. Load data
-    X_tr, y_tr, X_te, y_te, feat_names = load_train_test_data(dataset_file)
-    print(f"Loaded: {len(X_tr)} Training patients | {len(X_te)} Test patients")
-
-    # 2. Train and calibrate
-    rf_base, cal_model = train_and_calibrate(X_tr, y_tr)
-
-    # 3. Evaluate dual operating points
-    probs, auc_val = evaluate_clinical_metrics(cal_model, X_te, y_te, triage_threshold=0.35)
-
-    # 4. Generate Figures 06 & 07
-    plot_and_save_figures(rf_base, feat_names, y_te, probs, auc_val, figures_directory)
-
-    # 5. Save model checkpoint
-    model_save_path = checkpoints_dir / "interpretable_model.joblib"
-    joblib.dump(cal_model, model_save_path)
-    print(f"\nTrained model successfully saved to: {model_save_path.relative_to(project_root)}")
+    main()
