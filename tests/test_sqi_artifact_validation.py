@@ -112,7 +112,9 @@ def test_large_baseline_drift_is_detected():
 
     result = evaluate([drift, base])
 
-    assert technical_alert(result, "L0")
+    assert "L0" in result["baseline_drift_review_leads"]
+    assert result["st_measurement_review_required"] is True
+    assert "L0" not in result["technical_failure_leads"]
 
 
 def test_nonfinite_input_rejected():
@@ -212,5 +214,7 @@ def test_baseline_drift_is_localized():
     result = evaluate([drift, base])
 
     assert result["lead_scores"]["L0"]["baseline_drift_windows"]
-    assert "L0" in result["technical_failure_leads"]
+    assert "L0" in result["baseline_drift_review_leads"]
+    assert "L0" not in result["technical_failure_leads"]
     assert "L1" not in result["technical_failure_leads"]
+    assert result["requires_review"] is True

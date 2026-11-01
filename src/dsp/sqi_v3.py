@@ -272,6 +272,7 @@ def assess_ecg_quality_v3(
     amplitude_flags = {}
     technical_failures = []
     sustained_leads = []
+    baseline_review_leads = []
 
     for index, (name, info) in enumerate(lead_data.items()):
         windows = info["windows"]
@@ -320,8 +321,6 @@ def assess_ecg_quality_v3(
                 )
             windows[i]["usable"] = False
 
-        for i in drift_windows:
-            windows[i]["usable"] = False
 
         # Unknown rails: retain warnings, not hard failures.
         for i in suspected_clipping:
@@ -336,6 +335,9 @@ def assess_ecg_quality_v3(
 
         info["high_frequency_noise_windows"] = noise_windows
         info["baseline_drift_windows"] = drift_windows
+        info["baseline_drift_review"] = bool(drift_windows)
+        if drift_windows:
+            baseline_review_leads.append(name)
         info["clipping_suspected_windows"] = suspected_clipping
         info["clipping_confirmed_windows"] = confirmed_clipping
 
@@ -344,7 +346,6 @@ def assess_ecg_quality_v3(
                 flatline_windows
                 + confirmed_clipping
                 + noise_windows
-                + drift_windows
             )
         )
 
@@ -426,7 +427,9 @@ def assess_ecg_quality_v3(
         "sustained_instability_leads": sustained_leads,
         "morphology_review_leads": morphology_leads,
         "artifact_suspected_leads": localized_leads,
-        "requires_review": bool(sustained_leads),
+        "baseline_drift_review_leads": baseline_review_leads,
+        "st_measurement_review_required": bool(baseline_review_leads),
+        "requires_review": bool(sustained_leads or baseline_review_leads),
         "technical_quality": (
             "unusable"
             if technical_failures
