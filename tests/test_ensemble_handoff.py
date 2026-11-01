@@ -1,161 +1,271 @@
+
 """
-CardioSense - Ensemble-to-Guardrail Handoff Verification Test
+CardioSense - Ensemble and Clinical Triage Integration Tests.
 
-What this pins that nothing else does
--------------------------------------
-`test_triage.py` feeds the guardrails a payload assembled by hand, and
-`score_guardrails.py` assembles one from a row of `clinical_features.csv`. Both
-therefore assume that `CardioSenseEnsemble.predict()` builds the same shape the
-guardrails read. That assumption is exactly what broke during the ST measurement
-fix, and no existing test would have caught it.
-
-Here a real WFDB record goes through the real ensemble, and the dictionary that
-comes out is handed straight to the real triage engine - no adapter in between.
-
-Why the injected controls matter
---------------------------------
-The pinned cohort contains no acute STEMI, so nothing in it can show that an
-escalation is even reachable through the production payload. A green cohort audit
-is consistent with the guardrails being silently disconnected. The controls below
-prove the wiring carries signal in both directions: contiguity, the demographic
-cut-points, and the unknown-demographic fallback all still bite once the numbers
-travel through `predict()`'s output shape.
+Verifies:
+- Real ECG inference through the ensemble
+- Clinical triage integration
+- Prediction output compatibility
+- Contiguous ST elevation detection
+- Demographic thresholds
+- Unknown-demographic fallback
 """
 
 import copy
 import sys
 from pathlib import Path
 
-# Add project root to sys.path
-project_root = Path(__file__).resolve().parents[1]
-sys.path.append(str(project_root))
-
 import wfdb
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.triage.risk_fusion import CardioSenseEnsemble
 from src.triage.triage_rules import ClinicalTriageEngine
 
+
+RECORD = (
+    PROJECT_ROOT
+    / "data"
+    / "samples"
+    / "records100"
+    / "00000"
+    / "00001_lr"
+)
+
 engine = ClinicalTriageEngine()
 checks_run = []
 
-# A clean, twelve-lead, gate-passing record from the tracked samples.
-RECORD = project_root / "data" / "samples" / "records100" / "00000" / "00001_lr"
-
 
 def check(label, condition, detail=""):
-    """Assert with the evidence printed, so a failure reads as a finding."""
-    assert condition, f"FAILED: {label}{(' - ' + detail) if detail else ''}"
+    assert condition, f"FAILED: {label} - {detail}"
     checks_run.append(label)
     print(f"[PASS] {label}")
 
 
 def with_st(base, overrides):
-    """
-    Return a copy of a real payload with selected per-lead ST readings replaced.
-
-    Deep-copied on purpose: the controls below must not leak into each other
-    through a shared `st_by_lead` dictionary.
-    """
-    tampered = copy.deepcopy(base)
-    tampered["st_by_lead"].update(overrides)
-    return tampered
+    modified = copy.deepcopy(base)
+    modified["st_by_lead"].update(overrides)
+    return modified
 
 
 def with_patient(base, age, sex):
-    """Return a copy of a real payload carrying different demographics."""
-    tampered = copy.deepcopy(base)
-    tampered["patient"] = {"age": age, "sex": sex}
-    return tampered
+    modified = copy.deepcopy(base)
+    modified["patient"] = {
+        "age": age,
+        "sex": sex,
+    }
+    return modified
 
 
-# ---------------------------------------------------------
-# Block 1: Run a real record through the real ensemble
-# ---------------------------------------------------------
-print(f"Loading {RECORD.name} and running the full dual-engine path...")
-raw_sig, fields = wfdb.rdsamp(str(RECORD))
+def run_tests():
+    print("\n=== CARDIOSENSE INTEGRATION TEST ===\n")
 
-ensemble = CardioSenseEnsemble()
-payload = ensemble.predict(
-    raw_sig,
-    fs=fields["fs"],
-    lead_names=fields["sig_name"],
-    age=55,
-    sex="MALE",
-)
+    if not RECORD.with_suffix(".hea").exists():
+        raise FileNotFoundError(f"Missing ECG record: {RECORD}")
 
-check("the ensemble returns a scored result, not a quality rejection",
-      payload.get("status") == "success", payload.get("reason", ""))
+    raw_sig, fields = wfdb.rdsamp(str(RECORD))
 
-print(f"\n  risk {payload['risk_score_pct']}%  |  ensemble tier {payload['risk_tier']}"
-      f"  |  {len(payload['st_by_lead'])} trusted leads"
-      f"  |  ST {min(payload['st_by_lead'].values()):+.3f}"
-      f" to {max(payload['st_by_lead'].values()):+.3f} mV\n")
+    ensemble = CardioSenseEnsemble()
 
-# ---------------------------------------------------------
-# Block 2: The payload carries every key the guardrails read
-# ---------------------------------------------------------
-# These four keys are the whole contract. If predict() stops emitting any of
-# them, the guardrails degrade quietly rather than failing loudly, which is the
-# worst possible failure mode for a safety layer.
-check("payload carries st_by_lead", isinstance(payload.get("st_by_lead"), dict))
-check("payload carries patient demographics", "patient" in payload)
-check("payload carries qrs_plausible", "qrs_plausible" in payload["clinical_biomarkers"])
-check("a clean record yields all twelve leads as trusted",
-      len(payload["st_by_lead"]) == 12, str(sorted(payload["st_by_lead"])))
-check("trusted lead names are all recognised leads",
-      set(payload["st_by_lead"]) <= set(
-          {"I", "II", "III", "AVR", "AVL", "AVF",
-           "V1", "V2", "V3", "V4", "V5", "V6"}))
+    payload = ensemble.predict(
+        raw_sig,
+        fs=fields["fs"],
+        lead_names=fields["sig_name"],
+        age=55,
+        sex="MALE",
+    )
 
-# ---------------------------------------------------------
-# Block 3: The untouched record does not activate
-# ---------------------------------------------------------
-verdict = engine.evaluate(payload)
-check("an unmodified clean record raises no activation",
-      verdict["final_tier"] != engine.TIER_ESCALATION, verdict["final_tier"])
+    # 1. Verify inference succeeded.
+    check(
+        "Ensemble returns successful prediction",
+        payload.get("status") == "success",
+        str(payload.get("reason", "")),
+    )
 
-# ---------------------------------------------------------
-# Block 4: Positive control - contiguous elevation reaches TIER_3
-# ---------------------------------------------------------
-# +0.30/+0.32 mV in V2/V3 clears every demographic cut-point. If the guardrails
-# are wired to the production payload at all, this must activate.
-stemi = engine.evaluate(with_st(payload, {"V2": 0.30, "V3": 0.32}))
-check("contiguous V2/V3 elevation activates through the production payload",
-      stemi["final_tier"] == engine.TIER_ESCALATION, stemi["final_tier"])
-check("the activation is attributed to the contiguous-lead rule",
-      any(f["rule_id"] == "G1_CONTIGUOUS_STE" for f in stemi["findings"]),
-      str([f["rule_id"] for f in stemi["findings"]]))
+    # 2. Verify clinical triage is integrated.
+    check(
+        "Statistical tier is available",
+        "statistical_tier" in payload,
+    )
 
-# ---------------------------------------------------------
-# Block 5: Contiguity survives the handoff
-# ---------------------------------------------------------
-# The identical elevation in V2 alone has no partner lead, so it is a high
-# take-off, not an occlusion.
-lone = engine.evaluate(with_st(payload, {"V2": 0.30}))
-check("the same elevation in V2 alone does not activate",
-      lone["final_tier"] != engine.TIER_ESCALATION, lone["final_tier"])
+    check(
+        "Clinical triage output is available",
+        isinstance(payload.get("clinical_triage"), dict),
+    )
 
-# ---------------------------------------------------------
-# Block 6: The demographic cut-points survive the handoff
-# ---------------------------------------------------------
-# +0.18 mV in V2/V3 sits between the female threshold (0.15) and the
-# male >= 40 y threshold (0.20), so sex alone decides it.
-borderline = with_st(payload, {"V2": 0.18, "V3": 0.18})
-as_man = engine.evaluate(with_patient(borderline, 45, "MALE"))
-as_woman = engine.evaluate(with_patient(borderline, 45, "FEMALE"))
-check("0.18 mV in V2/V3 stays under the male >= 40 y cut-point",
-      as_man["final_tier"] != engine.TIER_ESCALATION, as_man["final_tier"])
-check("the identical reading crosses the female cut-point and activates",
-      as_woman["final_tier"] == engine.TIER_ESCALATION, as_woman["final_tier"])
+    clinical = payload["clinical_triage"]
 
-# ---------------------------------------------------------
-# Block 7: Unknown demographics resolve conservatively
-# ---------------------------------------------------------
-# Missing demographics must never relax a criterion. With no age or sex the
-# engine holds V2/V3 to the most sensitive threshold, so the record above must
-# still activate.
-as_unknown = engine.evaluate(with_patient(borderline, None, None))
-check("unknown demographics fall back to the sensitive cut-point and activate",
-      as_unknown["final_tier"] == engine.TIER_ESCALATION, as_unknown["final_tier"])
+    check(
+        "Clinical triage contains final tier",
+        "final_tier" in clinical,
+    )
 
-print(f"\nAll {len(checks_run)} ensemble-to-guardrail handoff assertions passed.")
+    check(
+        "Clinical triage contains findings",
+        isinstance(clinical.get("findings"), list),
+    )
+
+    check(
+        "Final risk tier matches clinical decision",
+        payload["risk_tier"] == clinical["final_tier"],
+    )
+
+    check(
+        "Final action matches clinical decision",
+        payload["triage_action"] == clinical["triage_action"],
+    )
+
+    check(
+        "Clinical decision matches independent evaluation",
+        clinical == engine.evaluate(payload),
+    )
+
+    print("\n=== CLINICAL TRIAGE OUTPUT ===")
+    print("ML risk score:", payload["risk_score_pct"])
+    print("Statistical tier:", payload["statistical_tier"])
+    print("Final risk tier:", payload["risk_tier"])
+    print("Triage action:", payload["triage_action"])
+    print("Override active:", clinical["override_active"])
+    print("Clinical findings:", clinical["findings"])
+
+    # 3. Verify guardrail input contract.
+    biomarkers = payload["clinical_biomarkers"]
+
+    check(
+        "Payload includes ST readings",
+        isinstance(payload.get("st_by_lead"), dict),
+    )
+
+    check(
+        "Payload includes patient demographics",
+        isinstance(payload.get("patient"), dict),
+    )
+
+    check(
+        "Payload includes QRS plausibility",
+        "qrs_plausible" in biomarkers,
+    )
+
+    check(
+        "All twelve ECG leads are trusted",
+        len(payload["st_by_lead"]) == 12,
+        str(sorted(payload["st_by_lead"])),
+    )
+
+    valid_leads = {
+        "I", "II", "III", "AVR", "AVL", "AVF",
+        "V1", "V2", "V3", "V4", "V5", "V6",
+    }
+
+    check(
+        "Lead names are recognized",
+        set(payload["st_by_lead"]) <= valid_leads,
+    )
+
+    # 4. Real-record baseline.
+    verdict = engine.evaluate(payload)
+
+    check(
+        "Clean ECG does not activate emergency rules",
+        verdict["final_tier"] != engine.TIER_ESCALATION,
+        verdict["final_tier"],
+    )
+
+    # 5. Contiguous ST elevation positive control.
+    stemi_payload = with_st(
+        payload,
+        {"V2": 0.30, "V3": 0.32},
+    )
+
+    stemi = engine.evaluate(stemi_payload)
+
+    check(
+        "Contiguous V2/V3 elevation triggers escalation",
+        stemi["final_tier"] == engine.TIER_ESCALATION,
+        stemi["final_tier"],
+    )
+
+    check(
+        "ST elevation rule is identified",
+        any(
+            finding["rule_id"] == "G1_CONTIGUOUS_STE"
+            for finding in stemi["findings"]
+        ),
+    )
+
+    # 6. Isolated ST elevation negative control.
+    lone_payload = with_st(
+        payload,
+        {"V2": 0.30},
+    )
+
+    lone = engine.evaluate(lone_payload)
+
+    check(
+        "Isolated V2 elevation does not trigger escalation",
+        lone["final_tier"] != engine.TIER_ESCALATION,
+        lone["final_tier"],
+    )
+
+    # 7. Demographic threshold checks.
+    borderline = with_st(
+        payload,
+        {"V2": 0.18, "V3": 0.18},
+    )
+
+    male = engine.evaluate(
+        with_patient(borderline, 45, "MALE")
+    )
+
+    female = engine.evaluate(
+        with_patient(borderline, 45, "FEMALE")
+    )
+
+    check(
+        "Male threshold does not activate at 0.18 mV",
+        male["final_tier"] != engine.TIER_ESCALATION,
+        male["final_tier"],
+    )
+
+    check(
+        "Female threshold activates at 0.18 mV",
+        female["final_tier"] == engine.TIER_ESCALATION,
+        female["final_tier"],
+    )
+
+    # 8. Missing demographic fallback.
+    unknown = engine.evaluate(
+        with_patient(borderline, None, None)
+    )
+
+    check(
+        "Unknown demographics use sensitive threshold",
+        unknown["final_tier"] == engine.TIER_ESCALATION,
+        unknown["final_tier"],
+    )
+
+    # 9. Guardrail escalation must not lower risk.
+    low_risk_control = copy.deepcopy(stemi_payload)
+    low_risk_control["risk_score_pct"] = 10.0
+
+    escalation = engine.evaluate(low_risk_control)
+
+    check(
+        "Critical ECG finding overrides low ML score",
+        escalation["final_tier"] == engine.TIER_ESCALATION,
+        escalation["final_tier"],
+    )
+
+    check(
+        "Override preserves original ML probability",
+        escalation["baseline_ensemble_risk_pct"] == 10.0,
+    )
+
+    print("\n===================================")
+    print(f"ALL {len(checks_run)} CHECKS PASSED")
+    print("===================================")
+
+
+if __name__ == "__main__":
+    run_tests()
