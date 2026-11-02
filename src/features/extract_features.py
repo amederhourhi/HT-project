@@ -11,6 +11,9 @@ from src.dsp.sqi import assess_ecg_quality
 from src.dsp.sqi_v3 import assess_ecg_quality_v3
 from src.features.r_peaks import detect_r_peaks, compute_hrv_features
 from src.features.fiducials import analyze_12lead_features
+from src.features.quality_contract import (
+    build_feature_quality_contract,
+)
 
 
 DEFAULT_LEADS = [
@@ -255,10 +258,18 @@ def extract_clinical_features(
             reading.get("st_at_j60_mv")
         )
 
+    quality_contract = build_feature_quality_contract(
+        features,
+        sqi_result,
+        sqi_version=sqi_version,
+        feature_columns=FEATURE_COLUMNS,
+    )
+
     return {
         "status": "success",
         "reason": "OK",
         "sqi_details": sqi_result,
         "st_details": st_details,
         "features": features,
+        "quality_contract": quality_contract,
     }
