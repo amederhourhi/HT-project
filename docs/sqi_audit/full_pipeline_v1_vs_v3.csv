@@ -1,0 +1,301 @@
+ecg_id,strat_fold,target_label,v1_status,v1_reason,v1_overall_sqi,v1_technical_failures,v1_requires_review,v1_feature_count,v3_status,v3_reason,v3_overall_sqi,v3_technical_failures,v3_requires_review,v3_feature_count
+6499,6,0,rejected,"Signal quality unacceptable (SQI: 0.614, passed: 5/12)",0.614,,False,0.0,success,OK,1.0,,False,38.0
+10038,3,0,success,OK,0.938,,False,38.0,success,OK,1.0,,False,38.0
+12051,8,0,rejected,"Signal quality unacceptable (SQI: 0.682, passed: 6/12)",0.682,,False,0.0,success,OK,1.0,,False,38.0
+7784,8,0,success,OK,0.946,,False,38.0,success,OK,1.0,,False,38.0
+13236,7,0,success,OK,0.798,,False,38.0,success,OK,1.0,,False,38.0
+5576,7,0,success,OK,0.834,,False,38.0,success,OK,1.0,,False,38.0
+3711,7,0,success,OK,0.955,,False,38.0,success,OK,1.0,,False,38.0
+4454,2,0,rejected,"Signal quality unacceptable (SQI: 0.703, passed: 9/12)",0.703,,False,0.0,success,OK,1.0,,False,38.0
+8934,8,0,success,OK,0.859,,False,38.0,success,OK,1.0,,False,38.0
+19339,2,0,success,OK,0.965,,False,38.0,success,OK,1.0,,False,38.0
+10231,6,0,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+129,10,0,success,OK,0.835,,False,38.0,success,OK,1.0,,False,38.0
+9829,1,0,success,OK,0.977,,False,38.0,success,OK,1.0,,False,38.0
+13234,7,0,success,OK,0.929,,False,38.0,success,OK,1.0,,False,38.0
+4969,6,0,success,OK,0.975,,False,38.0,success,OK,1.0,,False,38.0
+18991,4,0,rejected,"Signal quality unacceptable (SQI: 0.751, passed: 9/12)",0.751,,False,0.0,success,OK,1.0,,False,38.0
+2838,9,0,success,OK,0.913,,False,38.0,success,OK,1.0,,False,38.0
+10989,5,0,success,OK,0.797,,False,38.0,success,OK,1.0,,False,38.0
+552,1,0,success,OK,0.986,,False,38.0,success,OK,1.0,,False,38.0
+3569,4,0,success,OK,0.768,,False,38.0,success,OK,1.0,,False,38.0
+2841,9,0,success,OK,0.912,,False,38.0,success,OK,1.0,,False,38.0
+7735,4,0,rejected,"Signal quality unacceptable (SQI: 0.747, passed: 7/12)",0.747,,False,0.0,success,OK,1.0,,False,38.0
+3418,7,0,rejected,"Signal quality unacceptable (SQI: 0.688, passed: 9/12)",0.688,,False,0.0,success,OK,1.0,,False,38.0
+3470,4,0,success,OK,0.983,,False,38.0,success,OK,1.0,,True,38.0
+16023,8,0,success,OK,0.79,,False,38.0,success,OK,1.0,,False,38.0
+14623,3,0,success,OK,0.784,,False,38.0,success,OK,1.0,,False,38.0
+13567,6,0,success,OK,0.807,,False,38.0,success,OK,1.0,,False,38.0
+2979,1,0,success,OK,0.944,,False,38.0,success,OK,1.0,,False,38.0
+15665,2,0,success,OK,0.902,,False,38.0,success,OK,1.0,,False,38.0
+1097,2,0,success,OK,0.972,,False,38.0,success,OK,1.0,,False,38.0
+15736,8,0,success,OK,0.784,,False,38.0,success,OK,1.0,,False,38.0
+19765,7,0,success,OK,0.948,,False,38.0,success,OK,1.0,,False,38.0
+17454,1,0,success,OK,0.812,,False,38.0,success,OK,1.0,,False,38.0
+3119,2,0,success,OK,0.863,,False,38.0,success,OK,1.0,,False,38.0
+9389,1,0,success,OK,0.93,,False,38.0,success,OK,1.0,,False,38.0
+10272,10,0,rejected,"Signal quality unacceptable (SQI: 0.619, passed: 4/12)",0.619,,False,0.0,success,OK,1.0,,False,38.0
+13379,7,0,success,OK,0.953,,False,38.0,success,OK,1.0,,False,38.0
+4635,1,0,success,OK,0.871,,False,38.0,success,OK,1.0,,False,38.0
+15270,6,0,success,OK,0.84,,False,38.0,success,OK,1.0,,False,38.0
+204,9,0,success,OK,0.885,,False,38.0,success,OK,1.0,,False,38.0
+17523,9,0,rejected,"Signal quality unacceptable (SQI: 0.723, passed: 9/12)",0.723,,False,0.0,success,OK,1.0,,False,38.0
+15592,2,0,success,OK,0.895,,False,38.0,success,OK,1.0,,False,38.0
+10285,5,0,rejected,"Signal quality unacceptable (SQI: 0.785, passed: 9/12)",0.785,,False,0.0,success,OK,1.0,,False,38.0
+15201,5,0,success,OK,0.966,,False,38.0,success,OK,1.0,,False,38.0
+12836,4,0,success,OK,0.978,,False,38.0,success,OK,1.0,,False,38.0
+10484,10,0,success,OK,0.861,,False,38.0,success,OK,1.0,,False,38.0
+11299,6,0,success,OK,0.785,,False,38.0,success,OK,1.0,,False,38.0
+16398,3,0,success,OK,0.744,,False,38.0,success,OK,1.0,,False,38.0
+253,5,0,success,OK,0.731,,False,38.0,success,OK,1.0,,False,38.0
+7491,10,0,rejected,"Signal quality unacceptable (SQI: 0.636, passed: 5/12)",0.636,,False,0.0,success,OK,1.0,,False,38.0
+8069,1,0,success,OK,0.977,,False,38.0,success,OK,1.0,,False,38.0
+11014,6,0,success,OK,0.817,,False,38.0,success,OK,1.0,,False,38.0
+21106,1,0,success,OK,0.991,,False,38.0,success,OK,1.0,,False,38.0
+16438,4,0,success,OK,0.855,,False,38.0,success,OK,1.0,,False,38.0
+5436,8,0,success,OK,0.922,,False,38.0,success,OK,1.0,,True,38.0
+12683,1,0,rejected,"Signal quality unacceptable (SQI: 0.757, passed: 9/12)",0.757,,False,0.0,success,OK,1.0,,False,38.0
+8124,5,0,success,OK,0.944,,False,38.0,success,OK,1.0,,True,38.0
+10319,5,0,success,OK,0.869,,False,38.0,success,OK,1.0,,False,38.0
+10264,1,0,success,OK,0.881,,False,38.0,success,OK,1.0,,False,38.0
+1101,10,0,success,OK,0.899,,False,38.0,success,OK,1.0,,False,38.0
+12004,4,0,success,OK,0.894,,False,38.0,success,OK,1.0,,False,38.0
+20246,6,0,success,OK,0.932,,False,38.0,success,OK,1.0,,False,38.0
+773,7,0,rejected,"Signal quality unacceptable (SQI: 0.695, passed: 8/12)",0.695,,False,0.0,success,OK,1.0,,False,38.0
+21683,5,0,success,OK,0.912,,False,38.0,success,OK,1.0,,False,38.0
+7649,9,0,success,OK,0.969,,False,38.0,success,OK,1.0,,False,38.0
+5652,5,0,success,OK,0.825,,False,38.0,success,OK,1.0,,False,38.0
+1865,5,0,success,OK,0.864,,False,38.0,success,OK,1.0,,False,38.0
+4035,7,0,success,OK,0.945,,False,38.0,success,OK,1.0,,False,38.0
+9961,2,0,success,OK,0.939,,False,38.0,success,OK,1.0,,False,38.0
+4759,5,0,success,OK,0.947,,False,38.0,success,OK,1.0,,False,38.0
+20796,1,0,success,OK,0.804,,False,38.0,success,OK,1.0,,False,38.0
+12086,8,0,success,OK,0.843,,False,38.0,success,OK,1.0,,False,38.0
+3450,5,0,success,OK,0.815,,False,38.0,success,OK,1.0,,False,38.0
+11459,1,0,success,OK,0.85,,False,38.0,success,OK,1.0,,False,38.0
+694,10,0,success,OK,0.824,,False,38.0,success,OK,1.0,,True,38.0
+5405,9,0,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+5782,9,0,success,OK,0.901,,False,38.0,success,OK,1.0,,False,38.0
+12622,4,0,success,OK,0.808,,False,38.0,success,OK,1.0,,False,38.0
+18474,3,0,success,OK,0.84,,False,38.0,success,OK,1.0,,False,38.0
+17574,3,0,success,OK,0.787,,False,38.0,success,OK,1.0,,False,38.0
+9881,2,0,success,OK,0.825,,False,38.0,success,OK,1.0,,False,38.0
+7126,9,0,success,OK,0.798,,False,38.0,success,OK,1.0,,True,38.0
+2542,7,0,rejected,"Signal quality unacceptable (SQI: 0.741, passed: 8/12)",0.741,,False,0.0,success,OK,1.0,,False,38.0
+10465,3,0,success,OK,0.946,,False,38.0,success,OK,1.0,,False,38.0
+7394,3,0,success,OK,0.913,,False,38.0,success,OK,1.0,,False,38.0
+2912,7,0,success,OK,0.786,,False,38.0,success,OK,1.0,,False,38.0
+3730,6,0,success,OK,0.956,,False,38.0,success,OK,1.0,,False,38.0
+20979,4,0,success,OK,0.901,,False,38.0,success,OK,1.0,,False,38.0
+12607,10,0,success,OK,0.923,,False,38.0,success,OK,1.0,,False,38.0
+5621,9,0,success,OK,0.905,,False,38.0,success,OK,1.0,,False,38.0
+3583,7,0,rejected,"Signal quality unacceptable (SQI: 0.775, passed: 9/12)",0.775,,False,0.0,success,OK,1.0,,False,38.0
+5638,9,0,success,OK,0.916,,False,38.0,success,OK,1.0,,False,38.0
+174,5,0,success,OK,0.871,,False,38.0,success,OK,1.0,,False,38.0
+3907,1,0,success,OK,0.963,,False,38.0,success,OK,1.0,,False,38.0
+6896,2,0,rejected,"Signal quality unacceptable (SQI: 0.714, passed: 8/12)",0.714,,False,0.0,success,OK,1.0,,False,38.0
+10436,8,0,success,OK,0.821,,False,38.0,success,OK,1.0,,False,38.0
+1618,10,0,success,OK,0.927,,False,38.0,success,OK,1.0,,False,38.0
+9427,7,0,success,OK,0.884,,False,38.0,success,OK,1.0,,False,38.0
+5929,2,0,success,OK,0.943,,False,38.0,success,OK,1.0,,False,38.0
+19473,6,0,success,OK,0.72,,False,38.0,success,OK,1.0,,False,38.0
+19985,3,0,success,OK,0.86,,False,38.0,success,OK,1.0,,False,38.0
+10781,6,0,success,OK,0.977,,False,38.0,success,OK,1.0,,False,38.0
+13578,4,0,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+2935,10,0,rejected,"Signal quality unacceptable (SQI: 0.641, passed: 5/12)",0.641,,False,0.0,success,OK,1.0,,False,38.0
+9836,7,0,success,OK,0.805,,False,38.0,success,OK,1.0,,False,38.0
+13755,1,0,success,OK,0.807,,False,38.0,success,OK,1.0,,False,38.0
+5399,3,0,success,OK,0.856,,False,38.0,success,OK,1.0,,False,38.0
+21007,7,0,success,OK,0.923,,False,38.0,success,OK,1.0,,False,38.0
+17865,10,0,success,OK,0.828,,False,38.0,success,OK,1.0,,False,38.0
+16507,1,0,success,OK,0.918,,False,38.0,success,OK,1.0,,False,38.0
+5834,8,0,success,OK,0.877,,False,38.0,success,OK,1.0,,False,38.0
+10804,9,0,rejected,"Signal quality unacceptable (SQI: 0.704, passed: 7/12)",0.704,,False,0.0,success,OK,1.0,,False,38.0
+472,10,0,rejected,"Signal quality unacceptable (SQI: 0.718, passed: 8/12)",0.718,,False,0.0,success,OK,1.0,,True,38.0
+8751,2,0,success,OK,0.919,,False,38.0,success,OK,1.0,,False,38.0
+17212,4,0,success,OK,0.796,,False,38.0,success,OK,1.0,,False,38.0
+2596,10,0,success,OK,0.852,,False,38.0,success,OK,1.0,,False,38.0
+7007,10,0,success,OK,0.937,,False,38.0,success,OK,1.0,,False,38.0
+17005,5,0,success,OK,0.931,,False,38.0,success,OK,1.0,,False,38.0
+8288,5,0,success,OK,0.913,,False,38.0,success,OK,1.0,,False,38.0
+1344,7,0,success,OK,0.89,,False,38.0,success,OK,1.0,,False,38.0
+17121,4,0,success,OK,0.94,,False,38.0,success,OK,1.0,,False,38.0
+9674,9,0,success,OK,0.864,,False,38.0,success,OK,1.0,,False,38.0
+6470,3,0,success,OK,0.969,,False,38.0,success,OK,1.0,,False,38.0
+13049,8,0,success,OK,0.826,,False,38.0,success,OK,1.0,,False,38.0
+5524,6,0,success,OK,0.865,,False,38.0,success,OK,1.0,,False,38.0
+10806,10,0,rejected,"Signal quality unacceptable (SQI: 0.8, passed: 9/12)",0.8,,False,0.0,success,OK,1.0,,False,38.0
+197,4,0,success,OK,0.946,,False,38.0,success,OK,1.0,,False,38.0
+15733,1,0,rejected,"Signal quality unacceptable (SQI: 0.75, passed: 8/12)",0.75,,False,0.0,success,OK,1.0,,False,38.0
+11543,7,0,success,OK,0.811,,False,38.0,success,OK,1.0,,False,38.0
+19749,7,0,rejected,"Signal quality unacceptable (SQI: 0.62, passed: 4/12)",0.62,,False,0.0,success,OK,1.0,,False,38.0
+11606,3,0,success,OK,0.836,,False,38.0,success,OK,1.0,,False,38.0
+12114,4,0,success,OK,0.849,,False,38.0,success,OK,1.0,,False,38.0
+989,8,0,success,OK,0.976,,False,38.0,success,OK,1.0,,True,38.0
+17553,8,0,rejected,"Signal quality unacceptable (SQI: 0.605, passed: 4/12)",0.605,,False,0.0,success,OK,1.0,,False,38.0
+376,8,0,success,OK,0.79,,False,38.0,success,OK,1.0,,False,38.0
+2224,10,0,success,OK,0.768,,False,38.0,success,OK,1.0,,False,38.0
+1149,6,0,success,OK,0.928,,False,38.0,success,OK,1.0,,False,38.0
+3722,2,0,success,OK,0.961,,False,38.0,success,OK,1.0,,False,38.0
+19764,5,0,success,OK,0.896,,False,38.0,success,OK,1.0,,False,38.0
+9285,2,0,success,OK,0.87,,False,38.0,success,OK,1.0,,False,38.0
+10606,5,0,rejected,"Signal quality unacceptable (SQI: 0.667, passed: 8/12)",0.667,,False,0.0,success,OK,1.0,,False,38.0
+3993,5,0,success,OK,0.87,,False,38.0,success,OK,1.0,,False,38.0
+1259,5,0,rejected,"Signal quality unacceptable (SQI: 0.706, passed: 6/12)",0.706,,False,0.0,success,OK,1.0,,False,38.0
+1472,3,0,rejected,"Signal quality unacceptable (SQI: 0.65, passed: 6/12)",0.65,,False,0.0,success,OK,1.0,,False,38.0
+366,1,0,success,OK,0.901,,False,38.0,success,OK,1.0,,False,38.0
+13161,4,0,success,OK,0.992,,False,38.0,success,OK,1.0,,False,38.0
+6597,1,0,success,OK,0.886,,False,38.0,success,OK,1.0,,False,38.0
+583,7,0,success,OK,0.858,,False,38.0,success,OK,1.0,,False,38.0
+8230,2,0,rejected,"Signal quality unacceptable (SQI: 0.594, passed: 4/12)",0.594,,False,0.0,success,OK,1.0,,False,38.0
+6765,2,0,success,OK,0.974,,False,38.0,success,OK,1.0,,False,38.0
+10728,6,1,success,OK,0.938,,False,38.0,success,OK,1.0,,False,38.0
+3309,1,1,success,OK,0.96,,False,38.0,success,OK,1.0,,False,38.0
+544,9,1,success,OK,0.938,,False,38.0,rejected,"Signal quality unacceptable (SQI: 0.85, passed: 9/12)",0.85,,False,0.0
+8366,5,1,rejected,"Signal quality unacceptable (SQI: 0.666, passed: 6/12)",0.666,,False,0.0,success,OK,1.0,,False,38.0
+12710,10,1,success,OK,0.834,,False,38.0,success,OK,1.0,,False,38.0
+12978,3,1,success,OK,0.884,,False,38.0,success,OK,1.0,,False,38.0
+16282,2,1,success,OK,0.906,,False,38.0,success,OK,1.0,,False,38.0
+7706,6,1,rejected,"Signal quality unacceptable (SQI: 0.75, passed: 9/12)",0.75,,False,0.0,success,OK,1.0,,False,38.0
+5221,1,1,success,OK,0.881,,False,38.0,success,OK,1.0,,False,38.0
+4375,8,1,success,OK,0.975,,False,38.0,success,OK,1.0,,False,38.0
+3039,6,1,success,OK,0.908,,False,38.0,success,OK,0.95,,False,38.0
+18646,6,1,rejected,"Signal quality unacceptable (SQI: 0.828, passed: 9/12)",0.828,,False,0.0,rejected,Technical signal failure in leads: V3,1.0,V3,True,0.0
+8195,10,1,rejected,"Signal quality unacceptable (SQI: 0.703, passed: 7/12)",0.703,,False,0.0,success,OK,1.0,,False,38.0
+11671,9,1,success,OK,0.856,,False,38.0,success,OK,1.0,,False,38.0
+18223,2,1,success,OK,0.833,,False,38.0,success,OK,1.0,,False,38.0
+5958,9,1,success,OK,0.886,,False,38.0,success,OK,1.0,,False,38.0
+21292,7,1,success,OK,0.816,,False,38.0,success,OK,1.0,,False,38.0
+146,7,1,success,OK,0.912,,False,38.0,success,OK,1.0,,False,38.0
+8793,4,1,success,OK,0.87,,False,38.0,success,OK,1.0,,False,38.0
+17876,4,1,success,OK,0.874,,False,38.0,success,OK,1.0,,False,38.0
+2457,4,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+13580,9,1,success,OK,0.974,,False,38.0,success,OK,1.0,,False,38.0
+10464,8,1,rejected,"Signal quality unacceptable (SQI: 0.835, passed: 9/12)",0.835,,False,0.0,success,OK,1.0,,False,38.0
+4072,10,1,success,OK,0.815,,False,38.0,success,OK,1.0,,True,38.0
+9015,4,1,rejected,"Signal quality unacceptable (SQI: 0.713, passed: 6/12)",0.713,,False,0.0,success,OK,1.0,,False,38.0
+14316,6,1,success,OK,1.0,,False,38.0,success,OK,1.0,,True,38.0
+10051,5,1,success,OK,0.987,,False,38.0,success,OK,1.0,,True,38.0
+16711,9,1,success,OK,0.908,,False,38.0,success,OK,1.0,,False,38.0
+3668,8,1,success,OK,0.901,,False,38.0,success,OK,1.0,,False,38.0
+177,4,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+20655,4,1,success,OK,0.995,,False,38.0,success,OK,1.0,,False,38.0
+1918,5,1,success,OK,0.936,,False,38.0,success,OK,1.0,,True,38.0
+19370,10,1,success,OK,0.735,,False,38.0,success,OK,1.0,,False,38.0
+16952,10,1,success,OK,0.845,,False,38.0,success,OK,1.0,,False,38.0
+1415,5,1,success,OK,0.871,,False,38.0,success,OK,1.0,,False,38.0
+8983,4,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+16418,6,1,success,OK,0.954,,False,38.0,success,OK,1.0,,False,38.0
+9480,9,1,success,OK,0.801,,False,38.0,success,OK,1.0,,False,38.0
+3246,10,1,success,OK,1.0,,False,38.0,success,OK,1.0,,True,38.0
+15535,4,1,success,OK,0.838,,False,38.0,success,OK,1.0,,False,38.0
+20921,2,1,success,OK,0.88,,False,38.0,success,OK,1.0,,False,38.0
+14908,9,1,success,OK,0.965,,False,38.0,success,OK,1.0,,False,38.0
+21051,1,1,missing,Waveform files unavailable,,,,,missing,Waveform files unavailable,,,,
+223,9,1,success,OK,0.887,,False,38.0,success,OK,1.0,,False,38.0
+17518,5,1,success,OK,0.85,,False,38.0,success,OK,1.0,,False,38.0
+1447,10,1,success,OK,0.949,,False,38.0,success,OK,1.0,,False,38.0
+2742,4,1,success,OK,0.964,,False,38.0,success,OK,1.0,,False,38.0
+2675,6,1,success,OK,0.937,,False,38.0,success,OK,1.0,,False,38.0
+14639,1,1,success,OK,0.973,,False,38.0,success,OK,1.0,,True,38.0
+2118,3,1,success,OK,0.863,,False,38.0,success,OK,1.0,,False,38.0
+11880,9,1,rejected,"Signal quality unacceptable (SQI: 0.765, passed: 9/12)",0.765,,False,0.0,success,OK,1.0,,False,38.0
+7736,6,1,success,OK,0.959,,False,38.0,success,OK,1.0,,False,38.0
+21820,7,1,success,OK,0.771,,False,38.0,success,OK,1.0,,False,38.0
+4470,4,1,success,OK,0.99,,False,38.0,success,OK,1.0,,False,38.0
+968,10,1,success,OK,0.95,,False,38.0,success,OK,1.0,,True,38.0
+18596,9,1,success,OK,0.881,,False,38.0,success,OK,1.0,,False,38.0
+18582,6,1,success,OK,0.964,,False,38.0,success,OK,1.0,,False,38.0
+12867,3,1,success,OK,0.873,,False,38.0,success,OK,1.0,,False,38.0
+21584,10,1,success,OK,0.885,,False,38.0,success,OK,1.0,,False,38.0
+7537,1,1,success,OK,0.987,,False,38.0,success,OK,1.0,,False,38.0
+12631,10,1,success,OK,0.923,,False,38.0,success,OK,1.0,,False,38.0
+5349,4,1,success,OK,0.923,,False,38.0,success,OK,1.0,,False,38.0
+6795,3,1,rejected,"Signal quality unacceptable (SQI: 0.825, passed: 9/12)",0.825,,False,0.0,success,OK,1.0,,False,38.0
+14585,10,1,rejected,"Signal quality unacceptable (SQI: 0.744, passed: 9/12)",0.744,,False,0.0,success,OK,1.0,,False,38.0
+4143,2,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+6702,9,1,success,OK,0.986,,False,38.0,success,OK,1.0,,False,38.0
+4981,8,1,rejected,"Signal quality unacceptable (SQI: 0.647, passed: 4/12)",0.647,,False,0.0,success,OK,1.0,,False,38.0
+11629,5,1,success,OK,0.997,,False,38.0,success,OK,1.0,,False,38.0
+16714,1,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+6126,10,1,success,OK,1.0,,False,38.0,success,OK,1.0,,True,38.0
+6186,10,1,success,OK,0.875,,False,38.0,success,OK,1.0,,False,38.0
+10012,7,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+15166,4,1,success,OK,0.83,,False,38.0,success,OK,1.0,,False,38.0
+17416,6,1,success,OK,0.961,,False,38.0,success,OK,1.0,,False,38.0
+6715,5,1,success,OK,0.92,,False,38.0,success,OK,1.0,,False,38.0
+21401,7,1,success,OK,0.762,,False,38.0,success,OK,1.0,,False,38.0
+17032,1,1,rejected,"Signal quality unacceptable (SQI: 0.748, passed: 9/12)",0.748,,False,0.0,success,OK,1.0,,False,38.0
+16202,4,1,rejected,"Signal quality unacceptable (SQI: 0.672, passed: 6/12)",0.672,,False,0.0,success,OK,1.0,,False,38.0
+16699,3,1,success,OK,0.939,,False,38.0,success,OK,1.0,,False,38.0
+19464,7,1,rejected,"Signal quality unacceptable (SQI: 0.679, passed: 7/12)",0.679,,False,0.0,success,OK,1.0,,False,38.0
+5175,5,1,rejected,"Signal quality unacceptable (SQI: 0.75, passed: 9/12)",0.75,,False,0.0,success,OK,1.0,,False,38.0
+2311,9,1,success,OK,1.0,,False,38.0,success,OK,1.0,,True,38.0
+21596,5,1,success,OK,0.929,,False,38.0,success,OK,1.0,,False,38.0
+12545,10,1,success,OK,0.994,,False,38.0,success,OK,1.0,,False,38.0
+5543,4,1,success,OK,0.948,,False,38.0,success,OK,1.0,,False,38.0
+5709,4,1,missing,Waveform files unavailable,,,,,missing,Waveform files unavailable,,,,
+3600,10,1,success,OK,0.929,,False,38.0,success,OK,1.0,,False,38.0
+21452,1,1,success,OK,0.999,,False,38.0,success,OK,1.0,,False,38.0
+10539,4,1,success,OK,0.998,,False,38.0,success,OK,1.0,,False,38.0
+8436,2,1,success,OK,0.997,,False,38.0,success,OK,1.0,,False,38.0
+1737,10,1,success,OK,0.875,,False,38.0,success,OK,1.0,,False,38.0
+16586,8,1,success,OK,0.778,,False,38.0,success,OK,1.0,,False,38.0
+15838,5,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+7048,6,1,success,OK,0.953,,False,38.0,success,OK,1.0,,False,38.0
+2656,9,1,success,OK,0.947,,False,38.0,success,OK,1.0,,False,38.0
+6280,7,1,success,OK,0.94,,False,38.0,success,OK,1.0,,False,38.0
+6527,4,1,success,OK,0.842,,False,38.0,success,OK,1.0,,False,38.0
+11097,4,1,success,OK,0.996,,False,38.0,success,OK,1.0,,False,38.0
+16895,5,1,success,OK,0.998,,False,38.0,success,OK,1.0,,False,38.0
+19157,5,1,success,OK,0.991,,False,38.0,success,OK,1.0,,False,38.0
+6764,9,1,success,OK,0.95,,False,38.0,success,OK,1.0,,False,38.0
+14110,9,1,success,OK,0.973,,False,38.0,success,OK,1.0,,False,38.0
+21489,9,1,success,OK,0.979,,False,38.0,success,OK,1.0,,False,38.0
+20425,8,1,success,OK,0.994,,False,38.0,success,OK,1.0,,False,38.0
+14391,6,1,success,OK,0.962,,False,38.0,success,OK,1.0,,False,38.0
+19544,4,1,success,OK,0.819,,False,38.0,success,OK,1.0,,False,38.0
+532,4,1,success,OK,0.982,,False,38.0,success,OK,1.0,,False,38.0
+16480,8,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+8977,9,1,success,OK,0.851,,False,38.0,success,OK,1.0,,False,38.0
+13598,7,1,rejected,"Signal quality unacceptable (SQI: 0.765, passed: 9/12)",0.765,,False,0.0,success,OK,1.0,,True,38.0
+535,4,1,success,OK,0.954,,False,38.0,success,OK,1.0,,False,38.0
+12992,1,1,success,OK,0.906,,False,38.0,success,OK,1.0,,False,38.0
+5327,4,1,success,OK,0.967,,False,38.0,success,OK,1.0,,False,38.0
+1675,2,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+7708,5,1,success,OK,0.825,,False,38.0,success,OK,1.0,,False,38.0
+15641,6,1,success,OK,0.901,,False,38.0,success,OK,1.0,,False,38.0
+8753,2,1,success,OK,0.996,,False,38.0,success,OK,1.0,,False,38.0
+18058,6,1,rejected,"Signal quality unacceptable (SQI: 0.727, passed: 9/12)",0.727,,False,0.0,success,OK,1.0,,False,38.0
+2536,4,1,rejected,"Signal quality unacceptable (SQI: 0.782, passed: 8/12)",0.782,,False,0.0,success,OK,1.0,,False,38.0
+3987,1,1,success,OK,0.895,,False,38.0,success,OK,1.0,,False,38.0
+2804,1,1,rejected,"Signal quality unacceptable (SQI: 0.706, passed: 8/12)",0.706,,False,0.0,success,OK,1.0,,False,38.0
+1371,4,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+18467,5,1,success,OK,0.845,,False,38.0,success,OK,1.0,,False,38.0
+4978,1,1,success,OK,0.975,,False,38.0,success,OK,1.0,,False,38.0
+7673,6,1,success,OK,0.807,,False,38.0,success,OK,1.0,,False,38.0
+19573,7,1,success,OK,0.987,,False,38.0,success,OK,1.0,,False,38.0
+18636,4,1,success,OK,0.96,,False,38.0,success,OK,0.9,,False,38.0
+11047,3,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+7655,3,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+5957,4,1,success,OK,0.852,,False,38.0,success,OK,1.0,,False,38.0
+8669,6,1,success,OK,0.958,,False,38.0,success,OK,1.0,,False,38.0
+4869,6,1,rejected,"Signal quality unacceptable (SQI: 0.72, passed: 8/12)",0.72,,False,0.0,success,OK,1.0,,False,38.0
+2815,7,1,success,OK,1.0,,False,38.0,success,OK,1.0,,True,38.0
+13495,6,1,rejected,"Signal quality unacceptable (SQI: 0.691, passed: 6/12)",0.691,,False,0.0,success,OK,1.0,,False,38.0
+9096,3,1,success,OK,0.875,,False,38.0,success,OK,1.0,,False,38.0
+4009,4,1,success,OK,0.982,,False,38.0,success,OK,1.0,,False,38.0
+2450,7,1,success,OK,0.821,,False,38.0,success,OK,1.0,,False,38.0
+17565,1,1,success,OK,0.999,,False,38.0,success,OK,1.0,,False,38.0
+266,9,1,success,OK,0.962,,False,38.0,success,OK,1.0,,False,38.0
+14735,1,1,missing,Waveform files unavailable,,,,,missing,Waveform files unavailable,,,,
+7601,9,1,success,OK,0.988,,False,38.0,success,OK,1.0,,False,38.0
+2485,4,1,success,OK,1.0,,False,38.0,success,OK,1.0,,False,38.0
+21677,7,1,success,OK,0.879,,False,38.0,success,OK,1.0,,False,38.0
+7001,4,1,success,OK,0.88,,False,38.0,success,OK,1.0,,True,38.0
+17321,4,1,success,OK,0.852,,False,38.0,success,OK,1.0,,False,38.0
+13151,3,1,success,OK,0.945,,False,38.0,success,OK,1.0,,False,38.0
+13083,5,1,success,OK,0.96,,False,38.0,success,OK,0.9,,False,38.0
+17281,2,1,success,OK,0.833,,False,38.0,success,OK,1.0,,False,38.0
+11043,2,1,success,OK,0.983,,False,38.0,success,OK,1.0,,False,38.0
+964,2,1,success,OK,0.836,,False,38.0,success,OK,1.0,,True,38.0
