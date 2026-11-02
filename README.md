@@ -1,177 +1,151 @@
-# CardioSense 
-### Explainable Clinical Decision-Support System for Early Myocardial Infarction & Ischemia
+# CardioSense
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-EE4C2C.svg)](https://pytorch.org/)
-[![Signal Processing](https://img.shields.io/badge/DSP-SciPy%20Zero--Phase-00599C.svg)](https://scipy.org/)
-[![Clinical Data](https://img.shields.io/badge/Dataset-PTB--XL%20(PhysioNet)-green.svg)](https://physionet.org/content/ptb-xl/1.0.3/)
-[![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)]()
+**Explainable ECG analysis and experimental clinical decision support**  
+*Python · SciPy · PyTorch · scikit-learn · PTB-XL · Streamlit · React/Vite (prototype)*
 
-> **CardioSense** is a prototype clinical decision-support system (CDSS) designed to detect early electrophysiological signs of **Myocardial Infarction (heart attacks)** and **acute myocardial ischemia** from standard 12-lead ECGs and portable single-lead hardware, assisting clinicians in rapid triage and patient routing.
+> **Status (2 November 2026): research/engineering prototype — not a medical device.** CardioSense is not clinically validated, approved for clinical use, or suitable for autonomous diagnosis, cath-lab activation, or patient disposition. The system's current research data labels distinguish broad infarction-related records from normal ECGs; they do **not** establish acute coronary occlusion.
 
----
+[Engineering & verification log](docs/ENGINEERING_LOG.md) · [PTB-XL dataset](https://physionet.org/content/ptb-xl/1.0.3/)
 
-## The Clinical Mission
+## At a glance
 
-Time is myocardium. When a coronary artery occludes during an acute heart attack, millions of heart muscle cells die every minute. Early, confident detection on an ECG is the single most critical factor in routing patients to emergency cardiac catheterization (PCI).
+CardioSense explores how **digital signal processing, measurable ECG biomarkers, machine learning, and auditable decision rules** can work together. It accepts 12-lead ECG waveforms, filters them, evaluates signal quality, identifies cardiac landmarks, produces interpretable features, and supports an experimental dual-model inference and triage pipeline.
 
-However, real-world ECG analysis faces two major hurdles:
-1. **Noisy Signals**: Loose electrodes, patient shivering, and breathing drift produce artifacts that mimic heart attacks, causing false alarms and hospital overcrowding.
-2. **The "Black-Box" AI Dilemma**: Pure deep-learning models lack clinical interpretability. Clinicians cannot verify *why* a neural network triggered an alarm.
+**Current verified engineering results (300-record local manifest):**
 
-**CardioSense bridges this gap** using a **dual-engine architecture**: pairing clinically certified cardiological measurements (contiguous ST elevation at the J-point, QRS duration, HRV) with raw deep waveform representations, gated by strict signal-quality checks.
+| Measure | Legacy SQI V1 | Experimental SQI V3 |
+|---|---:|---:|
+| Available ECG waveforms | 297 | 297 |
+| Full feature extraction succeeded | 251 | **295** |
+| Full feature extraction rejected | 46 | **2** |
+| Missing waveform files | 3 | 3 |
+| Extraction success among available signals | 84.5% | **99.3%** |
 
----
+The comparison ran the complete `extract_clinical_features()` path for both versions on the same 300 manifest entries. V3 **recovered 45** V1-rejected records and **newly rejected 1** V1-accepted record (net +44). The 99.3% figure measures **pipeline completion, not signal-quality accuracy, MI sensitivity, or clinical safety**. The change deliberately treats baseline drift as a review warning instead of rejecting the entire recording. [Methods and audit](docs/ENGINEERING_LOG.md#16-experimental-sqi-v3-and-technical-artifact-review--november-2026)
 
-## System Architecture
+Latest focused local verification: **46/46 tests passed** across SQI and feature-quality contract tests. This is **not** a full-suite or clinical-validation result.
 
-```text
-                       [ Patient ECG Input ]
-              (12-Lead PTB-XL Dataset or ESP32 Hardware)
-                                │
-                                ▼
-        ┌─────────────────────────────────────────────────┐
-        │        1. Preprocessing & Quality Gate          │
-        │  • 0.5–40 Hz Zero-Phase Butterworth Bandpass    │
-        │  • Signal Quality Index (SQI): Flatline,        │
-        │    Clipping, and Kurtosis-based rejection       │
-        └───────────────────────┬─────────────────────────┘
-                                │ (If SQI >= 0.60)
-                                ▼
-         ┌───────────────────────────────────────────────┐
-         │             Dual-Engine Inference             │
-         ├───────────────────────┬───────────────────────┤
-         │  Engine A: Classical  │  Engine B: Deep Wave  │
-         │  • R-Peak & HRV       │  • Multichannel 1D    │
-         │  • Fiducial Landmark  │    ResNet / CNN       │
-         │  • ST Elevation @ J   │  • Latent Repolar-    │
-         │  • QRS Duration       │    ization Dynamics   │
-         └───────────┬───────────┴───────────┬───────────┘
-                     │                       │
-                     └───────────┬───────────┘
-                                 │
-                                 ▼
-        ┌─────────────────────────────────────────────────┐
-        │         2. Risk Fusion & Guardrails             │
-        │  • Deterministic Fourth UDMI Contiguous Rules   │
-        │  • Age/Sex Precordial Cut-Points (V2-V3)        │
-        │  • Dual-Engine Probability Averaging            │
-        └───────────────────────┬─────────────────────────┘
-                                │
-                                ▼
-        ┌─────────────────────────────────────────────────┐
-        │          3. Clinical Triage Interface           │
-        │  • Triage Routing: Routine | Review | Escalated │
-        │  • Auditable SBAR Clinical Note Generation      │
-        │  • Clinician Interface (FastAPI & Modern Web UI)│
-        └─────────────────────────────────────────────────┘
-```
-
----
-
-## Core Capabilities
-
-### 1. Robust Signal Quality Control (SQI)
-- Automated gatekeeper evaluating lead integrity before inference.
-- Rejects disconnected leads (variance $\sigma^2 < 10^{-4}$), amplifier saturation/clipping, and violent motion bursts.
-- Tested on clinical datasets: **12/12 leads approved (0.914 SQI)**, with instantaneous **0.000 SQI rejection** on unattached channels.
-
-### 2. Deterministic Cardiological Biomarkers
-- **Zero-Phase Filtering (`filtfilt`)**: Eliminates respiration baseline wander with **0.0 ms phase delay**, preserving true PR and QT intervals.
-- **R-Peak Detector**: Derivative-squared energy transformation with dynamic thresholding and physiological refractory lockout.
-- **ST-Segment Deviation**: Pinpoints the **J-point** relative to the flat PR isoelectric baseline and enforces **contiguous-lead criteria** with age/sex specific cut-points from the Fourth Universal Definition of Myocardial Infarction.
-
-### 3. Dual-Model Decision Support
-- Combines interpretable clinical rules (Random Forest with Platt calibration, **0.853 ROC-AUC**) with end-to-end 1D convolutional neural networks directly on raw multichannel voltages (**0.860 ROC-AUC**, **92.6% Specificity**).
-
-### 4. Hardware Streaming Prototype *(Upcoming)*
-- Live single-lead ECG capture using an ESP32 microcontroller and analog front-end (AFE), demonstrating edge-to-cloud clinical triage.
-
----
-
-## Repository Structure
+## What the system actually does
 
 ```text
-HT-project/
-├── data/
-│   ├── raw/             # Local PTB-XL database metadata (gitignored)
-│   ├── samples/         # Sample 100 Hz 12-lead records
-│   ├── cohort/          # Balanced 300-patient training cohort (gitignored)
-│   └── processed/       # Tabular extracted clinical features CSV
-├── src/
-│   ├── data/            # PTB-XL automated ingestion & cohort downloader
-│   ├── dsp/             # Zero-phase filters & Signal Quality Index (SQI)
-│   ├── features/        # R-peak detector, HRV, J-point ST landmarking, batch extractor
-│   ├── models/          # Interpretable Random Forest & PyTorch 1D-CNN
-│   └── triage/          # Risk fusion, lead geometry, and clinical triage rules
-├── tests/               # Unit, visual, and guardrail regression test suite
-├── docs/
-│   ├── ENGINEERING_LOG.md  # Detailed clinical lab journal & verification data
-│   └── figures/            # Clinical verification plots (Figures 01 to 09)
-├── pyproject.toml       # Package setup & dependency management
-├── requirements.txt     # Python dependencies
-└── README.md
+PTB-XL 12-lead ECG (typically 10 seconds at 100 Hz)
+         |
+         v
+Filtering (0.5–40 Hz) + signal-quality assessment
+         |         └─ V1: legacy default; V3: experimental opt-in
+         v
+R-peaks / rhythm + QRS / J-point / per-lead ST measurement
+         |
+         +------> 23 numerical ML features
+         |                 + feature-quality metadata (new, advisory)
+         v
+Experimental Random Forest + 12-channel 1D CNN
+         |
+         v
+Model fusion + deterministic contiguous-lead rule engine
+         |
+         v
+Tier / findings / clinician-facing research reader
 ```
 
----
+The **quality contract currently reports warnings but does not yet control downstream model use or the clinical rule engine**. A successful extraction must not be interpreted as proof that ST measurements are reliable.
 
-## Quickstart Guide
+### Main components
 
-### 1. Clone & Set Up Environment
-```bash
-# Clone repository
+| Area | Key paths | Purpose / maturity |
+|---|---|---|
+| Data ingestion | `src/data/`, `data/` | PTB-XL sample/cohort workflows; raw/cohort waveforms typically local and ignored by Git |
+| DSP | `src/dsp/filters.py`, `sqi.py`, `sqi_v2.py`, `sqi_v3.py` | Bandpass filtering; legacy SQI and **experimental** morphology/artifact-aware quality policy |
+| Clinical features | `src/features/fiducials.py`, `r_peaks.py`, `extract_features.py` | R-peaks, intervals, J-point ST deviation, territory summaries, 23 classifier inputs |
+| Quality metadata | `src/features/quality_contract.py` | `feature_quality_v1`: per-feature `not_validated` / `review_required` / `unavailable` indicators; advisory only |
+| ML | `src/models/train_interpretable.py`, `train_cnn.py` | Candidate Random Forest / CNN training using folds 1–8 train, 9 validation, 10 test |
+| Rules + fusion | `src/triage/leads.py`, `triage_rules.py`, `risk_fusion.py` | Contiguous-lead criteria, patient context, deterministic findings, ensemble/guardrail integration |
+| Evaluation | `src/evaluation/`, `scripts/`, `docs/sqi_audit/` | Guardrail audits, cohort alignment, experimental comparisons and diagnostic figures |
+| Interface | `src/dashboard/app.py`, `web/` | Streamlit research reader; separate Vite/React frontend foundation (not a production deployment) |
+| Tests | `tests/` | Unit, integration, regression, waveform and reader checks |
+
+The ESP32 single-lead hardware path is a **planned prototype**; it should not be confused with the current 12-lead software evaluation.
+
+## Why the project matters
+
+An ECG classifier alone is difficult to audit. CardioSense instead exposes **what was measured**, **which leads were assessed**, **which clinical rule fired**, and **where signal quality may compromise interpretation**. This makes it a useful engineering research platform while also exposing hard problems: landmark uncertainty, noisy signals, selection bias, class-label mismatch, dataset leakage and agreement between the model and rule-based layers.
+
+The rule engine has already been revised from single-lead territory maxima to contiguous-lead findings with demographic V2–V3 thresholds. An earlier audit showed **32/124 healthy-labeled records (25.8%)** escalated by older J+60-based rules; after correcting J-point measurement and rewriting rules, an earlier **251-record cohort** audit reported **3/124 (2.4%)**. These are **historical rule-behavior measurements on a selected cohort**, not prospective clinical specificity, and the current V3-expanded cohort has not received an equivalent end-to-end audit.
+
+## Model results — read the denominators
+
+The current **candidate** models were retrained/evaluated on a corrected fold protocol (1–8 train, 9 validation, 10 test), but **their test populations differ** due to feature availability:
+
+| Candidate model | Fold-10 ECGs evaluated | ROC-AUC | Accuracy | Sensitivity | Specificity |
+|---|---:|---:|---:|---:|---:|
+| 1D CNN | 31 | 0.9042 | 87.1% | 81.25% | 93.33% |
+| Interpretable RF | 24 | 0.7357 | 66.7% | 57.14% | 80.0% |
+
+**Do not compare these scores as a controlled head-to-head test.** They have different sample sizes and the candidate checkpoints are not automatically the active models. Older performance and ensemble figures are preserved with their original context in the [engineering log](docs/ENGINEERING_LOG.md). Because fold-10 ECGs were inspected during SQI development, it is **no longer an untouched validation set for the revised SQI policy**.
+
+## Getting started
+
+### Prerequisites
+
+- Python **3.10+**; Windows PowerShell examples below (Linux/macOS commands vary).
+- The PTB-XL data or supplied sample recordings for waveform-dependent demonstrations. Downloading the entire cohort is optional for running most pure unit tests.
+- Model checkpoints for full ML/ensemble inference; these are not required for every test.
+
+```powershell
+# Clone and enter the repository
 git clone https://github.com/amederhourhi/HT-project.git
 cd HT-project
 
-# Activate virtual environment
-# Windows:
+# Create and activate a virtual environment
+py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-# Linux/macOS:
-source .venv/bin/activate
 
-# Install package in editable mode with development/test dependencies
-pip install -e ".[dev]"
+# Install the project and development dependencies
+python -m pip install -e ".[dev]"
+
+# Run fast targeted tests (no full cohort benchmark required)
+python -m pytest tests/test_sqi_v3.py tests/test_sqi_v3_separation.py tests/test_sqi_artifact_validation.py tests/test_sqi_clipping_regression.py tests/test_feature_sqi_selection.py tests/test_feature_quality_contract.py -q
 ```
 
-### 2. Run Verification Tests
-```bash
-# 1. Run unit test suite (Signal processing filters and deterministic rules)
-pytest tests/test_triage_rules.py tests/test_filters_unit.py -v
+Additional test coverage and dataset requirements are documented in the [engineering log](docs/ENGINEERING_LOG.md). Running `pytest` across every script may require local waveforms, checkpoints, or a GUI-compatible environment; review the individual tests.
 
-# 2. Run 29-assertion clinical guardrail test
-python tests/test_triage.py
+### Running the research interface
 
-# 3. Inspect raw 12-lead waveforms
-python tests/test_inspect_ecg.py
-
-# 4. Verify zero-phase baseline filter
-python tests/test_filters.py
-
-# 5. Test R-peak detector and HRV metrics
-python tests/test_r_peaks.py
-
-# 6. Run Signal Quality Index (SQI) checks
-python tests/test_sqi.py
-
-# 7. Run fiducial landmarking and ST analysis
-python tests/test_fiducials.py
+```powershell
+streamlit run src/dashboard/app.py
 ```
 
----
+The separate `web/` directory contains a Vite/React frontend foundation. It should not be assumed to replicate all Streamlit reader features or have a production deployment.
 
-## 📊 Verification & Engineering Log
+### Reproduce the SQI comparison
 
-Detailed mathematical derivations, filter specs, clinical verification tables, and benchmark graphs are fully documented in our lab journal:
+With `data/cohort/cohort_manifest.csv` and its referenced waveform files available locally:
 
-**[Read the Full Engineering & Verification Log](docs/ENGINEERING_LOG.md)**
+```powershell
+python scripts/compare_sqi_v3.py
+```
 
----
+Output: `docs/sqi_audit/full_pipeline_v1_vs_v3.csv`. The script compares complete extraction outcomes and does **not** retrain or replace model checkpoints. The CSV represents a local experimental run, not a public validation benchmark.
 
-## ⚠️ Medical Disclaimer
+## Key engineering decisions and present limits
 
-> [!WARNING]
-> ### Medical Device & Clinical Disclaimer
-> **This project was primarily built for learning and research purposes.**  
-> It is a prototype clinical decision-support system intended solely for scientific exploration, algorithmic evaluation, and education. It is **not** an FDA-cleared, CE-marked, or clinically certified medical diagnostic device.  
-> 
-> CardioSense is designed to assist and support qualified clinicians—it must **never** be used as an autonomous diagnostic tool, nor should it ever replace the clinical judgment, physical examination, or diagnostic decisions of a licensed healthcare professional. Any suspected acute cardiac event or potentially life-threatening symptom requires immediate consultation with certified emergency medical services.
+- **ST is measured at the J point**, referenced to the PR isoelectric baseline, rather than using a J+60 legacy reading as the rule input. At 100 Hz, timing resolution remains limited.
+- **SQI V3 remains opt-in** (`sqi_version="v3"`). Flatlines, known-rail clipping and sustained HF interference can fail the quality gate; baseline drift is tracked as a warning. The warning **does not make affected ST values safe for automated use**.
+- **Feature Quality Contract v1** adds per-feature metadata without altering the existing 23 numerical classifier inputs. Some aggregate ST flags are conservative: they consider potentially contributing leads, not necessarily the actual lead that supplied the maximum.
+- **Ground truth is limited**: a broad infarction-vs-normal target is not the same as angiographically verified acute MI/STEMI. Small samples and a selected cohort restrict generalization.
+- **End-to-end quality-aware triage remains unfinished**: current warnings are not yet reliably enforced at the model/rule boundary; candidate model calibration, aligned ensemble evaluation, external validation and formal traceability remain open.
+- **Clinical claims are deliberately limited**: this repository demonstrates research software and software tests, not adherence certification to IEC 62304/ISO 13485 or FDA/CE clearance.
+
+## Roadmap
+
+1. **ST feature provenance:** record the exact source lead and measurement validity for per-territory and global ST extrema.
+2. **Quality-aware inference:** propagate warning/unavailable states through rule execution, API and reports; define safe abstention/clinician-review behavior.
+3. **Reproducible V3 dataset:** version feature extraction, track case inclusion/exclusion, ensure no leakage, and retrain RF against stable inputs.
+4. **Fair aligned evaluation:** evaluate candidate CNN/RF/fusion on the *same records*, with threshold calibration and honest uncertainty intervals; reserve a genuinely independent test/external set.
+5. **Operational hardening:** traceable SBAR reports, checkpoint/version hashes, CI, robust interfaces, reproducible data provenance, and prospective clinical collaboration before any deployment claims.
+
+For chronological experiments, failures, corrected assumptions, and verification commands, see **[ENGINEERING_LOG.md](docs/ENGINEERING_LOG.md)**. The older numerical tables there are part of the historical record and are not all current benchmarks.
+
+## Responsible use
+
+**For research and education only.** CardioSense is not a licensed medical device and must not be used to diagnose, exclude myocardial infarction, make emergency-routing decisions, or substitute for clinical evaluation. Medical interpretations and model confidence require independent expert validation and regulatory work before patient use.
