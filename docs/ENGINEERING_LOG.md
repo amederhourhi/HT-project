@@ -1,11 +1,51 @@
-# CardioSense — Clinical Engineering & Verification Log
+# CardioSense — Engineering & Verification Log
 
-**Project**: CardioSense — Clinical Decision-Support System (CDSS) for Myocardial Infarction & Ischemia  
-**Input Modalities**: Standard 12-Lead ECG (PTB-XL, 100 Hz) & Single-Lead ESP32 Hardware Prototype  
-**Architecture**: Dual-Engine (Interpretable Clinical Biomarkers + 1D Waveform CNN) with SQI Quality Gate & Guardrailed Triage  
-**Development Standard**: Follows clinical verification and traceability guidelines (IEC 62304 / ISO 13485 concepts)  
+**Project:** ECG feature extraction, research ML, deterministic rules, and experimental clinical decision support  
+**Updated:** 2 November 2026  
+**Document policy:** evidence-first; historical experiments retained; superseded claims clearly identified  
+**Scope:** software research prototype, **not** medical-device validation
+
+> **Read this page first.** Sections **1–14** and Appendix A preserve the project's development record, including mistakes discovered and corrected in later phases. Some early tables explicitly describe retired measurement conventions, retired rules, and earlier model checkpoints. **Do not quote an old figure without its dataset, split, feature version and date.** Sections **15–19** summarize the newest verified engineering work and current open risks. The README is the newcomer-friendly overview.
+
+## Current status — November 2026
+
+| Subsystem | Present state | Evidence / caveat |
+|---|---|---|
+| Waveform processing and fiducials | Implemented research prototype | J-point vs J+60 convention corrected in the historical hardening work; 100 Hz limitations remain |
+| Deterministic contiguous-lead guardrails | Implemented and historically audited | Earlier 251-record rule-only audit: 3/124 healthy-label escalations; **not** evidence of clinical specificity |
+| Ensemble + guardrail handoff | Implementation updated | 22 targeted standalone checks reported during integration; comprehensive externally validated cascade performance absent |
+| Corrected train/validation/test protocol | Candidate scripts implemented | Folds 1–8 / 9 / 10; candidate performance populations not aligned |
+| Experimental SQI V3 | Opt-in and benchmarked on 300-record manifest | 295/297 available ECGs extracted; signal-quality/clinical reliability not established |
+| Feature Quality Contract v1 | Implemented, additive metadata | 11 new tests; 46 focused SQI/contract tests passed in total; quality flags not yet enforced downstream |
+| Frontend | Streamlit research reader plus React/Vite scaffold | No evidence of production clinical deployment or complete frontend parity |
+| Clinical validation / regulatory compliance | **Not established** | No external/prospective validation, clearance, or certified quality system claimed |
+
+### Current benchmark definitions
+
+- **Cohort manifest:** 300 entries; 3 missing waveform files; 297 available.
+- **Extraction:** V1 251 successes / 46 rejections; V3 295 successes / 2 rejections. Among paired waveforms, V3 recovers 45 and newly rejects 1 (net +44). This is **coverage**, not prediction performance.
+- **Focused verification:** 46/46 tests passed across V3 SQI, artifact/clipping, V3 selection and feature quality-contract tests; not necessarily the whole repository suite.
+- **Candidate fold-10 results:** CNN 31 ECGs, ROC-AUC 0.9042, accuracy 87.1%, sensitivity 81.25%, specificity 93.33%; RF 24 ECGs, ROC-AUC 0.7357, accuracy 66.7%, sensitivity 57.14%, specificity 80%. **Different denominators: no controlled head-to-head comparison.**
+- **Unresolved:** SQI V3 remains optional; candidate models are not established as the live checkpoints; measurement-level quality, calibrated ensemble evaluation, end-to-end rule enforcement and external clinical validation are unfinished.
+
+## Reading guide and chronology
+
+| Sections | Focus |
+|---|---|
+| 1–8 | Original data/DSP/features and initial model experiments; earlier claims retained as historical context |
+| 9–10 | Initial ensemble and clinical guardrails; **older impressive numbers later qualified** |
+| 11–13 | Guardrail population audit, correction from J+60 to J-point, and contiguous-lead rule rewrite |
+| 14 | Streamlit clinician-reader redesign and outstanding traceability gaps |
+| 15 | Ensemble handoff and corrected candidate model evaluation |
+| 16 | SQI V2/V3 evolution, artifact policy, and whole-cohort comparison |
+| 17 | Feature Quality Contract v1 and testing |
+| 18 | Experimental interpretation, limitations and reproducibility |
+| 19 | Roadmap and release/readiness gates |
+| Appendix A | Older October 2026 comparison, **superseded and not the current baseline** |
 
 ---
+
+# Historical engineering record (preserved)
 
 ## Executive Summary
 
@@ -736,7 +776,185 @@ The screen now agrees with the rule. The note it exports does not yet agree with
 
 ---
 
-## 9. Honest Evaluation Snapshot – October 2026 (Updated)
+
+---
+
+## 15. Ensemble Handoff and Corrected Model Evaluation — October–November 2026
+
+### What changed
+
+The main risk-fusion path in `src/triage/risk_fusion.py` was updated so the statistical ensemble and deterministic `ClinicalTriageEngine` participate in a shared inference handoff. Previously, the model's statistical risk tier could be returned without being reconciled with the rule engine's final triage tier. The revised integration retains a distinction between **raw model probability** and **rule-influenced final tier**. This is an integration fix, *not* proof that the final triage is clinically safe or the score is calibrated. During development, 22 standalone handoff checks were reported; broader forced-override/API-to-report tests remain an explicit next step.
+
+### Corrected model-evaluation protocol
+
+Both candidate training scripts were revised to separate data into **folds 1–8 for training, fold 9 for validation, fold 10 for testing**. This replaces older descriptions that treated folds 9–10 together as a single untouched test block. Candidate checkpoints are intentionally separate from older live artifacts:
+
+- `models/checkpoints/ecg_cnn_fold10_candidate.pt`
+- `models/checkpoints/interpretable_model_fold10_candidate.joblib`
+
+| Fold-10 candidate result | 12-lead CNN | Random Forest |
+|---|---:|---:|
+| Evaluated ECGs | 31 | 24 |
+| ROC-AUC | 0.9042 | 0.7357 |
+| Accuracy | 87.1% | 66.7% |
+| Sensitivity | 81.25% | 57.14% |
+| Specificity | 93.33% | 80.0% |
+| False negatives | 3 | 6 |
+
+**Interpretation:** These results document two different filtered populations, not a fair model-comparison experiment. The RF path was affected by missing features: the original cohort had 297 available waveforms but only 251 completed feature rows. That gap was the trigger for the SQI audit. The reported candidate metrics must not be advertised as improved end-to-end patient triage or as a current calibrated ensemble benchmark. The README intentionally links here instead of selecting whichever historical AUC is largest.
+
+### Reproducibility and validity
+
+The committed diagnostic tools include `audit_cohort_alignment.py`, `audit_feature_missingness.py`, `audit_sqi_failure_modes.py`, `diagnose_feature_omissions.py` and fold-10 evaluation JSON in `docs/`. Candidate model binary files may be stored locally rather than Git-tracked. File existence does not establish deployment or independent verification. Because some fold-10 records were later inspected while tuning SQI, the redesigned SQI can no longer claim a pristine independent test on those same records.
+
+## 16. Experimental SQI V3 and Technical Artifact Review — November 2026
+
+### Problem: the original quality gate selected the cohort
+
+The V1 SQI was heavily influenced by kurtosis and a strict lead acceptance threshold (at least 10/12 usable leads with overall score ≥0.60 in the audited path). Normal sharp QRS complexes can have high kurtosis. A failed feature extraction was therefore not necessarily proof of a broken waveform.
+
+The 300-case manifest contained **297 available recordings** and **3 missing waveform files**. V1 successfully extracted features from 251 and rejected 46. Missingness was not perfectly balanced between classes; 26 normal-label and 20 positive-label ECGs were among the original 46 rejected. This selection effect matters to any machine-learning benchmark.
+
+### Iterations and current optional behavior
+
+- **V2:** Experimental reduction of overaggressive morphology-based exclusions; initial acceptance was high but artifact detection was insufficient.
+- **V3:** Combines revised lead quality with technical detectors for flatline, known-rail clipping, sustained high-frequency interference and low-frequency baseline variation; incorporates raw waveform information into the optional extractor path. `sqi_version="v1"` remains the feature extractor's default; `sqi_version="v3"` opts into the experiment.
+- **Clipping correction:** Repeated exact samples at a *known provided ADC rail* may indicate saturation. A plateau at a **window-local minimum or maximum without calibrated rails** is not proof of clipping. This was exposed by ECG 6795 and protected with regression tests.
+- **Baseline-drift policy correction:** Baseline drift is retained as `baseline_drift_review_leads` / `st_measurement_review_required` and can set `requires_review`; **drift alone no longer adds the affected lead to the hard technical-failure gate**. This prevents automatically rejecting a 12-lead recording merely because filtered morphology is still assessable. It **does not** validate its ST measurements.
+
+### Experimental cohort results — matched full feature pipeline
+
+The latest `scripts/compare_sqi_v3.py` evaluates both versions through `extract_clinical_features()` on the same available raw ECGs and exports `docs/sqi_audit/full_pipeline_v1_vs_v3.csv`.
+
+| Outcome | SQI V1 | SQI V3 (latest review-only drift policy) |
+|---|---:|---:|
+| Manifest records | 300 | 300 |
+| Missing waveforms | 3 | 3 |
+| Feature extraction success | **251** | **295** |
+| Extraction rejection | 46 | 2 |
+| Success among 297 available | 84.5% | 99.3% |
+
+Paired transition table (297 waveforms):
+
+| V1 outcome → V3 outcome | Count |
+|---|---:|
+| Success → success | 250 |
+| Rejected → success | 45 |
+| Success → rejected | 1 |
+| Rejected → rejected | 1 |
+
+V3 rejection explanations were **one general SQI lead-count failure** and **one technical failure in lead V3** (ECG 18646). The positive-label group had 145/150 successful cases; the negative-label group 150/150. These are not clinical sensitivity and specificity estimates; their labels and the measurement task differ.
+
+### Why the baseline rule changed
+
+Before the review-only policy, V3 completed 277 waveforms, rejected 20, recovered 44 V1-rejected cases and newly rejected 18 V1-successful cases. Among those 18 regressions, **17 were associated with baseline-drift technical-failure classification** across 30 lead occurrences; one failed the general SQI gate. Three representative recordings were inspected:
+
+| Record / lead | Estimated baseline P95–P5 | Filtered signal range | Interpretation |
+|---|---:|---:|---|
+| 4072 / V5 | 1.8655 mV | 2.1887 mV | Clear complexes remained after filtering; drift alone did not prove complete unusability |
+| 5436 / V6 | 3.3980 mV | 1.1235 mV | Pronounced low-frequency disturbance; corrected signal still needs ST-fidelity evaluation |
+| 14316 / V4 | 1.4216 mV | 4.2122 mV | Broad changing morphology partly influenced the baseline estimate; possible confounding |
+
+The 0.8 s median baseline estimate is an artifact heuristic, not a validated reference baseline for ST clinical interpretation. The policy deliberately favors **flag-and-review** rather than silent acceptance as measurement-valid or whole-record exclusion.
+
+### Verification
+
+- Targeted test suite after policy changes and quality-contract integration: **46 passed** (see Section 17 for distribution).
+- Selected real ECG checks: **6795** success (38 extracted keys), **7706** success (38 keys), **18646** rejected for a V3 technical issue.
+- The 38 total reported feature dictionary keys should not be confused with **23 classifier columns**.
+- Experiment plots and CSVs are under `docs/sqi_audit/`; plots may be gitignored intentionally.
+
+**What these tests do not prove:** V3 clinical accuracy, the prevalence of false artifact flags, trustworthy ST deviation on high-wander traces, or improved infarction discrimination. Nor do they establish independently validated acceptance thresholds. No adaptive SQI policy has been promoted to the default.
+
+## 17. Feature Quality Contract v1 — November 2026
+
+### Purpose and interface
+
+`src/features/quality_contract.py` adds **advisory metadata**, returning a `quality_contract` in the **successful** `extract_clinical_features()` response. It does not silently mutate the existing `features` dictionary or add dimensions to the 23-feature classifier vector.
+
+The contract is marked `quality_policy_version="feature_quality_v1"` and can represent:
+
+| Feature status | Meaning |
+|---|---|
+| `review_required` | A known SQI concern may affect the measurement; a reviewer or explicit downstream policy is required |
+| `unavailable` | The relevant lead/territory is not trusted or the required measure is absent |
+| `not_validated` | No targeted warning was assigned; **not a claim of reliability or clinical validity** |
+
+It also publishes `review_required_features`, `unavailable_features`, `has_measurement_quality_concerns`, and `clinical_measurement_validation="not_established"`. Example: ECG 4072 (V5 baseline drift) produced a successful extraction, and its contract marked `st_V5`, `st_lateral_max`, `max_st_elevation_mv`, and `max_st_depression_mv` for review. The original 23 classifier values were preserved.
+
+### Precision limitation
+
+Territory/global ST summaries are currently marked based on the **set of potentially contributing leads**, not the proven argmax/argmin source of the actual value. This intentionally overflags some aggregates. Exact source-lead provenance is the next architectural improvement. Also, the contract does not itself enforce abstention, withhold a questionable ST value, or influence the current rule engine: it is **metadata only**.
+
+### Verification evidence
+
+- `tests/test_feature_quality_contract.py`: **11 passed** locally.
+- Combined tests in `test_sqi_v3.py`, `test_sqi_v3_separation.py`, `test_sqi_artifact_validation.py`, `test_sqi_clipping_regression.py`, `test_feature_sqi_selection.py`, and `test_feature_quality_contract.py`: **46 passed**.
+- ECG 4072 integration check: `status=success`, version `feature_quality_v1`, V5 ST marked `review_required`, all 23 classifier input names retained.
+
+This is a *functional integration test result*, not an externally validated quality model.
+
+## 18. Interpretation, Risk Register and Reproduction
+
+### Separation of engineering metrics
+
+| Quantity | Can be claimed? | Cannot be inferred |
+|---|---|---|
+| 295/297 SQI V3 feature completions | Yes, for this local cohort/configuration | 99.3% correct quality classification |
+| 46 focused tests passed | Yes, for the tested source snapshot | Whole system validated or free of regressions |
+| Candidate CNN ROC-AUC 0.9042 on 31 fold-10 ECGs | Yes with denominator and candidate qualifier | Generalizable acute MI detection / clinical benefit |
+| Candidate RF ROC-AUC 0.7357 on 24 fold-10 ECGs | Yes with denominator | Fair superiority/inferiority versus the CNN |
+| Historical guardrail audit 3/124 healthy escalations | Yes for historical rule-only 251-record cohort | Deployed real-world emergency false-alarm rate |
+
+### Active engineering risks
+
+| Priority | Risk | Mitigation / required evidence |
+|---|---|---|
+| P0 | Baseline-drift-positive ST values still reach numerical features | Per-measurement validity/provenance; quality-aware rule exclusion or review; adversarial tests |
+| P0 | No independent clinical/acute-occlusion reference | External adjudicated data and prospective clinical partner before medical assertions |
+| P0 | Fold-10 SQI development inspection contaminates independence | New untouched test or external dataset; versioned split and selection protocol |
+| P1 | V1/V3 quality distribution shift affects RF inputs | Fresh V3 feature export with stable schema, train-only fitting, aligned record IDs |
+| P1 | RF/CNN test denominators differ | Paired comparison on identical held-out ECGs with uncertainty intervals |
+| P1 | End-to-end tier/report traceability incomplete | Verify rule IDs, fused probability vs tier, report hashes, checkpoint identity and review paths |
+| P1 | Clinical UI assertions and experimental React UI may drift | Shared API contract and complete end-to-end handoff tests |
+| P2 | Diagnostic tests may emit tracked images | Redirect generated artifacts to scratch paths; deterministic CI |
+
+### Reproduction (Windows PowerShell from project root)
+
+```powershell
+# Targeted SQI and feature-quality regression suite
+python -m pytest tests/test_sqi_v3.py tests/test_sqi_v3_separation.py tests/test_sqi_artifact_validation.py tests/test_sqi_clipping_regression.py tests/test_feature_sqi_selection.py tests/test_feature_quality_contract.py -q
+
+# Requires local cohort_manifest.csv + waveforms
+python scripts/compare_sqi_v3.py
+
+# Guardrail logic / separate historical cohort audit
+python -m pytest tests/test_triage.py -q
+python src/evaluation/score_guardrails.py --scope all --fail-above 0.10
+```
+
+The original log includes additional experiments with Linux-style shell commands; ensure prerequisites and sample datasets match before interpreting their output. Model training should write new checkpoint names rather than overwrite candidate/baseline artifacts.
+
+## 19. Next Phase — Measurement Provenance and Quality-Aware Inference
+
+**Entry criteria:** baseline drift detection is separate from hard technical failures, V3 extraction comparison reproducible, and feature-quality metadata exists without changing the classifier schema. These are implemented. **Exit criteria are not yet met.**
+
+1. **Exact ST provenance:** record the source lead(s), extremum selection, measurement point, and relevant quality warnings for every territory/global ST aggregate.
+2. **Validity enforcement:** define when unreliable or absent lead measurements must be withheld, marked unknown or trigger review, instead of silently driving a critical rule; do not encode missing values as physiological zero.
+3. **End-to-end tier tests:** assert that quality warnings, deterministic findings, ML probabilities and final tier stay consistent through fusion, API/reader and SBAR output.
+4. **Versioned feature export and retraining:** create an immutable V3 feature dataset, preserve training folds/patient separation and test feature-schema comparability; retain older checkpoints.
+5. **Fair model and cascade evaluation:** compare RF, CNN and fusion over **identical** records; distinguish MI-classification outcomes from acute injury rule outcomes; report confidence intervals and calibration.
+6. **External validation and governance:** keep an untouched evaluation set, document device and acquisition differences (100 vs 500 Hz), secure data handling, reproducible versions and clinical sign-off.
+
+**Engineering conclusion:** CardioSense now has stronger pipeline structure, more explicit quality evidence and substantially higher extraction coverage on this particular cohort. It has **not** established clinically trustworthy ST measurement on warned leads, improved acute MI detection, or readiness for real patient decisions. Those are the next research questions, not achievements to be assumed.
+
+---
+
+## Appendix A. Historical Evaluation Snapshot — October 2026 (Superseded)
+
+> **Historical only.** This snapshot used folds 9–10 and an older experimental setup. It is not the corrected fold-10 candidate evaluation and cannot be used as the latest model comparison.
+
+
 
 All numbers below come from `src/evaluation/full_report.py` run on the official PTB-XL test folds (9–10) after SQI filtering.
 
