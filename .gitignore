@@ -34,3 +34,10 @@ artifacts/
 .idea/
 .DS_Store
 Thumbs.db
+# Local ECG diagnostic figures
+docs/sqi_audit/*.png
+docs/sqi_audit/baseline_regressions/
+
+# Experimental model checkpoints
+models/checkpoints/*_fold10_candidate.pt
+models/checkpoints/*_fold10_candidate.joblib
