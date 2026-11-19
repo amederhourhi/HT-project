@@ -1,0 +1,44 @@
+{
+  "audit_version": "sqi_ablation_uncertainty_v1",
+  "created_utc": "2026-11-19T16:28:18.089223+00:00",
+  "validation_fold": 9,
+  "records": 25,
+  "patients": 25,
+  "positive_records": 16,
+  "test_evaluated": false,
+  "comparison": "V3 + SQI versus V1 + SQI, same matched ECGs",
+  "observed_accuracy_difference_v3_minus_v1": 0.07999999999999996,
+  "observed_roc_auc_difference_v3_minus_v1": 0.0,
+  "paired_decisions": {
+    "v3_correct_v1_wrong": 2,
+    "v1_correct_v3_wrong": 0,
+    "both_correct": 17,
+    "both_wrong": 6,
+    "changed_predicted_classes": 2,
+    "mcnemar_exact_two_sided_p": 0.5
+  },
+  "patient_bootstrap": {
+    "sampling_unit": "patient_id",
+    "seed": 42,
+    "draws": 3000,
+    "auc_draws_with_both_classes": 3000,
+    "v3_minus_v1_accuracy_95pct_interval": [
+      0.0,
+      0.2
+    ],
+    "v3_minus_v1_roc_auc_95pct_interval": [
+      -0.07894736842105254,
+      0.0956023755656108
+    ]
+  },
+  "provenance": {
+    "predictions_sha256": "da1682b9e3c4d2d10fd079324b0d9c71b8ca7662928b5d23fe318c6322caabb5",
+    "ablation_report_sha256": "747cdac0073d1398776cfc109afb13a8f66829ffbdb041b41a85c335f2da14d9",
+    "manifest_sha256": "127cea29cf2b8eebf8c3d570fe50f9fb08a92b1075e14c782d4f67f721db7232"
+  },
+  "limitations": [
+    "Small fold-9 cohort examined repeatedly",
+    "Bootstrap intervals are descriptive, not external validation",
+    "Results do not justify model promotion or clinical use"
+  ]
+}

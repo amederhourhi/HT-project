@@ -1,0 +1,117 @@
+{
+  "audit_version": "v1_v3_feature_shift_v1",
+  "generated_utc": "2026-11-19T15:14:16.267297+00:00",
+  "git_commit": "ab4fd2e0a9804bbd7bbc6532ba373ecfca44084f",
+  "manifest_sha256": "127cea29cf2b8eebf8c3d570fe50f9fb08a92b1075e14c782d4f67f721db7232",
+  "v1_baseline_sha256": "766c1d6aef2c68393f7267fe49ca847ff2899b72dd232fbefd1d03e05f02d15e",
+  "source_sha256": {
+    "src/dsp/sqi_v3.py": "e766b34df7559a3c9bd3bc6a06e5dfa6038523a00c56696992d9b4a68b485ac9",
+    "src/features/extract_features.py": "ef5a7b8e81a27b2b77d434ade891a484f00fe3bf2f64c3f11252f251fdc60f1c",
+    "src/features/quality_contract.py": "98ae3f62e9b2501d5b5178a8e29fc74c0da9b33e6fafba54e7c3d7095b1d8e14",
+    "src/triage/inference_quality.py": "3df7a61d30d3f5a35e9dc2cdf589cfa8f5072154decdc637bf97799bbda5439e"
+  },
+  "comparison_tolerance": 1e-09,
+  "manifest_records": 300,
+  "v1_successes": 251,
+  "v3_status_counts": {
+    "success": 295,
+    "rejected": 2,
+    "missing": 3
+  },
+  "v3_quality_decisions": {
+    "eligible": 275,
+    "abstain": 25
+  },
+  "paired_successes": 250,
+  "paired_records_with_changes": 229,
+  "changed_feature_values": 229,
+  "feature_changes": [
+    {
+      "feature": "overall_sqi",
+      "changed_values": 229,
+      "max_absolute_difference": 0.28
+    }
+  ],
+  "by_label": [
+    {
+      "target_label": 0,
+      "records": 150,
+      "v3_successes": 150,
+      "eligible": 143
+    },
+    {
+      "target_label": 1,
+      "records": 150,
+      "v3_successes": 145,
+      "eligible": 132
+    }
+  ],
+  "by_fold": [
+    {
+      "strat_fold": 1,
+      "records": 32,
+      "v3_successes": 30,
+      "eligible": 29
+    },
+    {
+      "strat_fold": 2,
+      "records": 25,
+      "v3_successes": 25,
+      "eligible": 24
+    },
+    {
+      "strat_fold": 3,
+      "records": 21,
+      "v3_successes": 21,
+      "eligible": 21
+    },
+    {
+      "strat_fold": 4,
+      "records": 45,
+      "v3_successes": 44,
+      "eligible": 42
+    },
+    {
+      "strat_fold": 5,
+      "records": 33,
+      "v3_successes": 33,
+      "eligible": 30
+    },
+    {
+      "strat_fold": 6,
+      "records": 31,
+      "v3_successes": 30,
+      "eligible": 29
+    },
+    {
+      "strat_fold": 7,
+      "records": 31,
+      "v3_successes": 31,
+      "eligible": 29
+    },
+    {
+      "strat_fold": 8,
+      "records": 20,
+      "v3_successes": 20,
+      "eligible": 18
+    },
+    {
+      "strat_fold": 9,
+      "records": 31,
+      "v3_successes": 30,
+      "eligible": 28
+    },
+    {
+      "strat_fold": 10,
+      "records": 31,
+      "v3_successes": 31,
+      "eligible": 25
+    }
+  ],
+  "limitations": [
+    "No model inference was performed",
+    "Feature drift does not establish model compatibility",
+    "SQI quality flags are experimental",
+    "No clinical validation was performed"
+  ]
+}
