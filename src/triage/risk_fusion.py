@@ -1,9 +1,8 @@
 
-"""
-CardioSense - Ensemble Inference and Clinical Risk Fusion.
+"""CardioSense ensemble inference and quality assessment.
 
-Combines Random Forest and 1D-CNN predictions with deterministic
-clinical triage rules.
+Legacy V1 inference remains available for regression testing.
+V3 quality assessment never invokes unverified model checkpoints.
 """
 
 from pathlib import Path
@@ -13,12 +12,14 @@ import numpy as np
 import pandas as pd
 import torch
 
+from src.data.ecg_loader import load_standardized_ecg
 from src.dsp.filters import filter_ecg
 from src.features.extract_features import (
     FEATURE_COLUMNS,
     extract_clinical_features,
 )
 from src.models.ecg_cnn import CardioNet1D
+from src.triage.inference_quality import evaluate_research_readiness
 from src.triage.triage_rules import ClinicalTriageEngine
 
 
@@ -31,7 +32,7 @@ DEFAULT_LEADS = [
 
 
 class CardioSenseEnsemble:
-    """Run ECG inference and apply clinical triage guardrails."""
+    """Provide legacy model inference and separate V3 quality assessment."""
 
     def __init__(self, checkpoints_dir=None):
         self.checkpoints_dir = (
@@ -53,11 +54,9 @@ class CardioSenseEnsemble:
             raise FileNotFoundError(
                 "Missing required model checkpoints:\n"
                 + "\n".join(missing)
-                + "\nTrain the models before running inference."
             )
 
         self.device = torch.device("cpu")
-
         self.rf_model = joblib.load(rf_path)
 
         self.cnn_model = CardioNet1D(
@@ -84,8 +83,67 @@ class CardioSenseEnsemble:
         self.triage_engine = ClinicalTriageEngine()
 
     @staticmethod
+    def assess_v3_record(record_path):
+        """Assess a WFDB record with V3; never run model inference.
+
+        This method is static so that no RF/CNN checkpoints need to
+        be loaded merely to inspect a recording's quality.
+        """
+
+        # The shared loader validates units, channels, and sampling rate.
+        signals, fs, lead_names = load_standardized_ecg(record_path)
+
+        extraction = extract_clinical_features(
+            signals,
+            fs=fs,
+            lead_names=lead_names,
+            sqi_version="v3",
+        )
+
+        status = extraction.get("status")
+
+        if status not in ("success", "rejected"):
+            raise ValueError(
+                f"Unexpected feature extraction status: {status}"
+            )
+
+        # The quality gate checks V3 metadata and every RF feature.
+        quality = evaluate_research_readiness(extraction)
+
+        if status == "rejected":
+            outcome = "abstained"
+            reason = extraction.get("reason", quality["reason"])
+
+        elif not quality["allow_research_scoring"]:
+            outcome = "abstained"
+            reason = quality["reason"]
+
+        else:
+            # Passing the quality gate is not sufficient to score:
+            # the V3-compatible RF checkpoint is not yet verified.
+            outcome = "quality_eligible_unscored"
+            reason = (
+                "Quality gate passed, but V3 model compatibility "
+                "has not been established"
+            )
+
+        return {
+            "status": outcome,
+            "reason": reason,
+            "sqi_version": "v3",
+            "quality_decision": quality,
+            "sqi_details": extraction.get("sqi_details"),
+            "quality_contract": extraction.get("quality_contract"),
+            "model_compatibility": "not_verified",
+            "model_scoring_performed": False,
+            "risk_score_pct": None,
+            "clinical_triage": None,
+        }
+
+    @staticmethod
     def _validate_probability(value, model_name):
-        """Reject invalid classifier probability outputs."""
+        """Require a finite model probability between zero and one."""
+
         probability = float(value)
 
         if not np.isfinite(probability):
@@ -101,18 +159,18 @@ class CardioSenseEnsemble:
         return probability
 
     def _predict_rf(self, features):
-        """Predict using the calibrated tabular classifier."""
-        feature_frame = pd.DataFrame([features])[FEATURE_COLUMNS]
+        """Run the existing calibrated tabular classifier."""
 
-        probability = self.rf_model.predict_proba(feature_frame)[0, 1]
+        frame = pd.DataFrame([features])[FEATURE_COLUMNS]
+        probability = self.rf_model.predict_proba(frame)[0, 1]
 
         return self._validate_probability(
-            probability,
-            "Random Forest",
+            probability, "Random Forest"
         )
 
     def _predict_cnn(self, raw_signals, fs):
-        """Predict using normalized 12-lead waveforms."""
+        """Filter, normalize, and classify a 12-lead waveform."""
+
         cleaned = filter_ecg(raw_signals, fs=fs)
 
         mean = np.mean(cleaned, axis=0, keepdims=True)
@@ -131,13 +189,13 @@ class CardioSenseEnsemble:
             probability = torch.softmax(logits, dim=1)[0, 1].item()
 
         return self._validate_probability(
-            probability,
-            "1D-CNN",
+            probability, "1D-CNN"
         )
 
     @staticmethod
     def _statistical_tier(risk_score_pct):
-        """Map ensemble score to the existing prototype thresholds."""
+        """Apply the existing prototype probability bands."""
+
         if risk_score_pct < 35.0:
             return (
                 "TIER_1_ROUTINE",
@@ -147,17 +205,20 @@ class CardioSenseEnsemble:
         if risk_score_pct < 65.0:
             return (
                 "TIER_2_REVIEW",
-                "Urgent Clinician Review (Intermediate Risk / Borderline findings)",
+                "Urgent Clinician Review "
+                "(Intermediate Risk / Borderline findings)",
             )
 
         return (
             "TIER_3_ESCALATION",
-            "Immediate Emergency Escalation (High Risk Infarction Suspected)",
+            "Immediate Emergency Escalation "
+            "(High Risk Infarction Suspected)",
         )
 
     @staticmethod
     def _analyze_territories(features):
-        """Summarize regional ST measurements."""
+        """Preserve the existing territory summary calculation."""
+
         territories = {
             "Anterior / Septal (LAD)": {
                 "artery": "Left Anterior Descending (LAD)",
@@ -197,15 +258,22 @@ class CardioSenseEnsemble:
         age=None,
         sex=None,
     ):
-        """Run ECG analysis, model inference, and clinical triage."""
+        """Run the existing V1-trained ensemble.
+
+        Retained for compatibility with earlier experiments.
+        This path does not use the V3 quality gate and is not
+        a clinically validated decision-support system.
+        """
+
         if lead_names is None:
             lead_names = DEFAULT_LEADS.copy()
 
-        # Signal quality must pass before classification.
+        # Explicitly pin the legacy preprocessing policy.
         feat_result = extract_clinical_features(
             raw_signals,
             fs=fs,
             lead_names=lead_names,
+            sqi_version="v1",
         )
 
         if feat_result["status"] == "rejected":
@@ -217,7 +285,7 @@ class CardioSenseEnsemble:
 
         if feat_result["status"] != "success":
             raise ValueError(
-                f"Unexpected feature extraction status: "
+                "Unexpected feature extraction status: "
                 f"{feat_result['status']}"
             )
 
@@ -234,7 +302,6 @@ class CardioSenseEnsemble:
             for lead in trusted_leads
         }
 
-        # Statistical inference.
         p_rf = self._predict_rf(features)
         p_cnn = self._predict_cnn(raw_signals, fs)
 
@@ -278,7 +345,6 @@ class CardioSenseEnsemble:
             },
         }
 
-        # Clinical rules can escalate, but never downgrade, ML risk.
         clinical_triage = self.triage_engine.evaluate(result)
 
         result["clinical_triage"] = clinical_triage
