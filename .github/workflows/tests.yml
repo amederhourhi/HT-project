@@ -1,47 +1,51 @@
-# ---------------------------------------------------------
-# Block 1: Workflow Triggers
-# What it does: Runs tests automatically on pushes and pull requests.
-# How it does it: Listens to push and pull_request events on all branches.
-# ---------------------------------------------------------
-name: tests
+
+name: CardioSense Tests
 
 on:
   push:
   pull_request:
 
-# ---------------------------------------------------------
-# Block 2: Test Runner Environment Setup
-# What it does: Spins up a clean Ubuntu runner with Python 3.11.
-# How it does it: Uses standard GitHub checkout and setup-python actions.
-# ---------------------------------------------------------
 jobs:
-  test:
+  unit-tests:
+    name: Deterministic regression tests
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
 
-      # ---------------------------------------------------------
-      # Block 3: Install Package & Dependencies
-      # What it does: Installs the project in editable mode with test tools.
-      # How it does it: Runs pip install -e .[dev] using pyproject.toml.
-      # ---------------------------------------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          python -m pip install -e ".[dev]"
 
-      # ---------------------------------------------------------
-      # Block 4: Run Complete Zero-Data Test Suite
-      # What it does: Runs all unit and deterministic guardrail tests.
-      # How it does it: Calls pytest on unit tests and executes test_triage.py.
-      # ---------------------------------------------------------
-      - name: Run unit and guardrail tests
+      - name: Run deterministic test suite
         run: |
-          pytest tests/test_triage_rules.py tests/test_filters_unit.py -v
-          python tests/test_triage.py
+          python -m pytest -q \
+            tests/test_triage_rules.py \
+            tests/test_filters_unit.py \
+            tests/test_input_validation.py \
+            tests/test_ecg_loader.py \
+            tests/test_feature_quality_contract.py \
+            tests/test_feature_sqi_selection.py \
+            tests/test_sqi_v3.py \
+            tests/test_sqi_v3_separation.py \
+            tests/test_sqi_artifact_validation.py \
+            tests/test_sqi_clipping_regression.py \
+            tests/test_inference_quality.py \
+            tests/test_v3_quality_handoff.py \
+            tests/test_model_contract_audit.py \
+            tests/test_v3_feature_shift.py \
+            tests/test_v3_rf_candidate.py \
+            tests/test_v1_v3_rf_comparison.py \
+            tests/test_sqi_rf_ablation.py \
+            tests/test_sqi_ablation_uncertainty.py
+
+      - name: Run standalone guardrail regression
+        run: python tests/test_triage.py
