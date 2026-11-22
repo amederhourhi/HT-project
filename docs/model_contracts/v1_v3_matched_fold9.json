@@ -1,0 +1,148 @@
+{
+  "contract_version": "v1_v3_matched_fold9_v1",
+  "generated_utc": "2026-11-19T15:36:02.561340+00:00",
+  "git_commit": "ab4fd2e0a9804bbd7bbc6532ba373ecfca44084f",
+  "evaluation_fold": 9,
+  "test_fold_evaluated": false,
+  "training_method": "RandomForestClassifier + patient-aware StratifiedGroupKFold sigmoid calibration",
+  "feature_order": [
+    "heart_rate_bpm",
+    "mean_rr_sec",
+    "sdnn_ms",
+    "rmssd_ms",
+    "qrs_duration_ms",
+    "max_st_elevation_mv",
+    "max_st_depression_mv",
+    "st_anterior_max",
+    "st_inferior_max",
+    "st_lateral_max",
+    "st_I",
+    "st_II",
+    "st_III",
+    "st_AVR",
+    "st_AVL",
+    "st_AVF",
+    "st_V1",
+    "st_V2",
+    "st_V3",
+    "st_V4",
+    "st_V5",
+    "st_V6",
+    "overall_sqi"
+  ],
+  "training_records": {
+    "v1": 199,
+    "v3": 222
+  },
+  "validation_full": {
+    "v1": {
+      "records": 28,
+      "positives": 18,
+      "threshold": 0.5,
+      "accuracy": 0.6785714285714286,
+      "sensitivity": 0.6111111111111112,
+      "specificity": 0.8,
+      "roc_auc": 0.7555555555555555,
+      "pr_auc": 0.892688458660681,
+      "brier": 0.2015506129180498,
+      "log_loss": 0.5934750683529625,
+      "confusion_matrix": {
+        "tn": 8,
+        "fp": 2,
+        "fn": 7,
+        "tp": 11
+      }
+    },
+    "v3": {
+      "records": 28,
+      "positives": 17,
+      "threshold": 0.5,
+      "accuracy": 0.6785714285714286,
+      "sensitivity": 0.5882352941176471,
+      "specificity": 0.8181818181818182,
+      "roc_auc": 0.625668449197861,
+      "pr_auc": 0.8005062366827074,
+      "brier": 0.24043254542366707,
+      "log_loss": 0.6818586380513141,
+      "confusion_matrix": {
+        "tn": 9,
+        "fp": 2,
+        "fn": 7,
+        "tp": 10
+      }
+    }
+  },
+  "validation_matched": {
+    "v1": {
+      "records": 25,
+      "positives": 16,
+      "threshold": 0.5,
+      "accuracy": 0.64,
+      "sensitivity": 0.5625,
+      "specificity": 0.7777777777777778,
+      "roc_auc": 0.7083333333333333,
+      "pr_auc": 0.8700257034632035,
+      "brier": 0.2219147683221779,
+      "log_loss": 0.6419986601030087,
+      "confusion_matrix": {
+        "tn": 7,
+        "fp": 2,
+        "fn": 7,
+        "tp": 9
+      }
+    },
+    "v3": {
+      "records": 25,
+      "positives": 16,
+      "threshold": 0.5,
+      "accuracy": 0.68,
+      "sensitivity": 0.625,
+      "specificity": 0.7777777777777778,
+      "roc_auc": 0.6597222222222223,
+      "pr_auc": 0.8290552771345105,
+      "brier": 0.23131607894904593,
+      "log_loss": 0.6605412590137095,
+      "confusion_matrix": {
+        "tn": 7,
+        "fp": 2,
+        "fn": 6,
+        "tp": 10
+      }
+    }
+  },
+  "coverage_by_label": [
+    {
+      "target_label": 0,
+      "manifest_records": 12,
+      "v1_accepted": 10,
+      "v3_eligible": 11,
+      "paired_records": 9,
+      "v1_coverage": 0.8333333333333334,
+      "v3_coverage": 0.9166666666666666
+    },
+    {
+      "target_label": 1,
+      "manifest_records": 19,
+      "v1_accepted": 18,
+      "v3_eligible": 17,
+      "paired_records": 16,
+      "v1_coverage": 0.9473684210526315,
+      "v3_coverage": 0.8947368421052632
+    }
+  ],
+  "artifacts": {
+    "v1_dataset_sha256": "766c1d6aef2c68393f7267fe49ca847ff2899b72dd232fbefd1d03e05f02d15e",
+    "v3_dataset_sha256": "a05550d7caecd1fcd8db1bff3587267f9bcfd7758df5d4a901e212f68c259fca",
+    "v1_comparator_sha256": "c1fe5aa81a03b5adb8e94278e838ea95313e316ed4c1aa3c208f57fba3b57103",
+    "v3_candidate_sha256": "dab68bde12406f5310b73d4bcde8df325c83e5a2adaeae4626523aa45d58e009",
+    "v3_training_contract_sha256": "7ac478e25cca7695d0180c8db9ed4af29556a53aca3f84f2892a88b0361f841d",
+    "paired_predictions_sha256": "0386244ae588a688b0ecafb3d536937188d39ed081e71ac7a464e896896bb75f"
+  },
+  "limitations": [
+    "Models were trained on differently selected populations",
+    "Matched validation does not isolate SQI's causal effect",
+    "Small validation cohort; uncertainty remains high",
+    "Fold 9 has been used during project development",
+    "No clinical or external validation"
+  ]
+}

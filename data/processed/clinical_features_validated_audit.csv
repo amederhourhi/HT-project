@@ -1,0 +1,301 @@
+ecg_id,filename_lr,target_label,strat_fold,status,stage,reason
+6499,records100/06000/06499_lr,0,6,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.614, passed: 5/12)"
+10038,records100/10000/10038_lr,0,3,success,complete,OK
+12051,records100/12000/12051_lr,0,8,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.682, passed: 6/12)"
+7784,records100/07000/07784_lr,0,8,success,complete,OK
+13236,records100/13000/13236_lr,0,7,success,complete,OK
+5576,records100/05000/05576_lr,0,7,success,complete,OK
+3711,records100/03000/03711_lr,0,7,success,complete,OK
+4454,records100/04000/04454_lr,0,2,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.703, passed: 9/12)"
+8934,records100/08000/08934_lr,0,8,success,complete,OK
+19339,records100/19000/19339_lr,0,2,success,complete,OK
+10231,records100/10000/10231_lr,0,6,success,complete,OK
+129,records100/00000/00129_lr,0,10,success,complete,OK
+9829,records100/09000/09829_lr,0,1,success,complete,OK
+13234,records100/13000/13234_lr,0,7,success,complete,OK
+4969,records100/04000/04969_lr,0,6,success,complete,OK
+18991,records100/18000/18991_lr,0,4,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.751, passed: 9/12)"
+2838,records100/02000/02838_lr,0,9,success,complete,OK
+10989,records100/10000/10989_lr,0,5,success,complete,OK
+552,records100/00000/00552_lr,0,1,success,complete,OK
+3569,records100/03000/03569_lr,0,4,success,complete,OK
+2841,records100/02000/02841_lr,0,9,success,complete,OK
+7735,records100/07000/07735_lr,0,4,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.747, passed: 7/12)"
+3418,records100/03000/03418_lr,0,7,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.688, passed: 9/12)"
+3470,records100/03000/03470_lr,0,4,success,complete,OK
+16023,records100/16000/16023_lr,0,8,success,complete,OK
+14623,records100/14000/14623_lr,0,3,success,complete,OK
+13567,records100/13000/13567_lr,0,6,success,complete,OK
+2979,records100/02000/02979_lr,0,1,success,complete,OK
+15665,records100/15000/15665_lr,0,2,success,complete,OK
+1097,records100/01000/01097_lr,0,2,success,complete,OK
+15736,records100/15000/15736_lr,0,8,success,complete,OK
+19765,records100/19000/19765_lr,0,7,success,complete,OK
+17454,records100/17000/17454_lr,0,1,success,complete,OK
+3119,records100/03000/03119_lr,0,2,success,complete,OK
+9389,records100/09000/09389_lr,0,1,success,complete,OK
+10272,records100/10000/10272_lr,0,10,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.619, passed: 4/12)"
+13379,records100/13000/13379_lr,0,7,success,complete,OK
+4635,records100/04000/04635_lr,0,1,success,complete,OK
+15270,records100/15000/15270_lr,0,6,success,complete,OK
+204,records100/00000/00204_lr,0,9,success,complete,OK
+17523,records100/17000/17523_lr,0,9,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.723, passed: 9/12)"
+15592,records100/15000/15592_lr,0,2,success,complete,OK
+10285,records100/10000/10285_lr,0,5,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.785, passed: 9/12)"
+15201,records100/15000/15201_lr,0,5,success,complete,OK
+12836,records100/12000/12836_lr,0,4,success,complete,OK
+10484,records100/10000/10484_lr,0,10,success,complete,OK
+11299,records100/11000/11299_lr,0,6,success,complete,OK
+16398,records100/16000/16398_lr,0,3,success,complete,OK
+253,records100/00000/00253_lr,0,5,success,complete,OK
+7491,records100/07000/07491_lr,0,10,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.636, passed: 5/12)"
+8069,records100/08000/08069_lr,0,1,success,complete,OK
+11014,records100/11000/11014_lr,0,6,success,complete,OK
+21106,records100/21000/21106_lr,0,1,success,complete,OK
+16438,records100/16000/16438_lr,0,4,success,complete,OK
+5436,records100/05000/05436_lr,0,8,success,complete,OK
+12683,records100/12000/12683_lr,0,1,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.757, passed: 9/12)"
+8124,records100/08000/08124_lr,0,5,success,complete,OK
+10319,records100/10000/10319_lr,0,5,success,complete,OK
+10264,records100/10000/10264_lr,0,1,success,complete,OK
+1101,records100/01000/01101_lr,0,10,success,complete,OK
+12004,records100/12000/12004_lr,0,4,success,complete,OK
+20246,records100/20000/20246_lr,0,6,success,complete,OK
+773,records100/00000/00773_lr,0,7,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.695, passed: 8/12)"
+21683,records100/21000/21683_lr,0,5,success,complete,OK
+7649,records100/07000/07649_lr,0,9,success,complete,OK
+5652,records100/05000/05652_lr,0,5,success,complete,OK
+1865,records100/01000/01865_lr,0,5,success,complete,OK
+4035,records100/04000/04035_lr,0,7,success,complete,OK
+9961,records100/09000/09961_lr,0,2,success,complete,OK
+4759,records100/04000/04759_lr,0,5,success,complete,OK
+20796,records100/20000/20796_lr,0,1,success,complete,OK
+12086,records100/12000/12086_lr,0,8,success,complete,OK
+3450,records100/03000/03450_lr,0,5,success,complete,OK
+11459,records100/11000/11459_lr,0,1,success,complete,OK
+694,records100/00000/00694_lr,0,10,success,complete,OK
+5405,records100/05000/05405_lr,0,9,success,complete,OK
+5782,records100/05000/05782_lr,0,9,success,complete,OK
+12622,records100/12000/12622_lr,0,4,success,complete,OK
+18474,records100/18000/18474_lr,0,3,success,complete,OK
+17574,records100/17000/17574_lr,0,3,success,complete,OK
+9881,records100/09000/09881_lr,0,2,success,complete,OK
+7126,records100/07000/07126_lr,0,9,success,complete,OK
+2542,records100/02000/02542_lr,0,7,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.741, passed: 8/12)"
+10465,records100/10000/10465_lr,0,3,success,complete,OK
+7394,records100/07000/07394_lr,0,3,success,complete,OK
+2912,records100/02000/02912_lr,0,7,success,complete,OK
+3730,records100/03000/03730_lr,0,6,success,complete,OK
+20979,records100/20000/20979_lr,0,4,success,complete,OK
+12607,records100/12000/12607_lr,0,10,success,complete,OK
+5621,records100/05000/05621_lr,0,9,success,complete,OK
+3583,records100/03000/03583_lr,0,7,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.775, passed: 9/12)"
+5638,records100/05000/05638_lr,0,9,success,complete,OK
+174,records100/00000/00174_lr,0,5,success,complete,OK
+3907,records100/03000/03907_lr,0,1,success,complete,OK
+6896,records100/06000/06896_lr,0,2,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.714, passed: 8/12)"
+10436,records100/10000/10436_lr,0,8,success,complete,OK
+1618,records100/01000/01618_lr,0,10,success,complete,OK
+9427,records100/09000/09427_lr,0,7,success,complete,OK
+5929,records100/05000/05929_lr,0,2,success,complete,OK
+19473,records100/19000/19473_lr,0,6,success,complete,OK
+19985,records100/19000/19985_lr,0,3,success,complete,OK
+10781,records100/10000/10781_lr,0,6,success,complete,OK
+13578,records100/13000/13578_lr,0,4,success,complete,OK
+2935,records100/02000/02935_lr,0,10,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.641, passed: 5/12)"
+9836,records100/09000/09836_lr,0,7,success,complete,OK
+13755,records100/13000/13755_lr,0,1,success,complete,OK
+5399,records100/05000/05399_lr,0,3,success,complete,OK
+21007,records100/21000/21007_lr,0,7,success,complete,OK
+17865,records100/17000/17865_lr,0,10,success,complete,OK
+16507,records100/16000/16507_lr,0,1,success,complete,OK
+5834,records100/05000/05834_lr,0,8,success,complete,OK
+10804,records100/10000/10804_lr,0,9,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.704, passed: 7/12)"
+472,records100/00000/00472_lr,0,10,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.718, passed: 8/12)"
+8751,records100/08000/08751_lr,0,2,success,complete,OK
+17212,records100/17000/17212_lr,0,4,success,complete,OK
+2596,records100/02000/02596_lr,0,10,success,complete,OK
+7007,records100/07000/07007_lr,0,10,success,complete,OK
+17005,records100/17000/17005_lr,0,5,success,complete,OK
+8288,records100/08000/08288_lr,0,5,success,complete,OK
+1344,records100/01000/01344_lr,0,7,success,complete,OK
+17121,records100/17000/17121_lr,0,4,success,complete,OK
+9674,records100/09000/09674_lr,0,9,success,complete,OK
+6470,records100/06000/06470_lr,0,3,success,complete,OK
+13049,records100/13000/13049_lr,0,8,success,complete,OK
+5524,records100/05000/05524_lr,0,6,success,complete,OK
+10806,records100/10000/10806_lr,0,10,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.8, passed: 9/12)"
+197,records100/00000/00197_lr,0,4,success,complete,OK
+15733,records100/15000/15733_lr,0,1,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.75, passed: 8/12)"
+11543,records100/11000/11543_lr,0,7,success,complete,OK
+19749,records100/19000/19749_lr,0,7,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.62, passed: 4/12)"
+11606,records100/11000/11606_lr,0,3,success,complete,OK
+12114,records100/12000/12114_lr,0,4,success,complete,OK
+989,records100/00000/00989_lr,0,8,success,complete,OK
+17553,records100/17000/17553_lr,0,8,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.605, passed: 4/12)"
+376,records100/00000/00376_lr,0,8,success,complete,OK
+2224,records100/02000/02224_lr,0,10,success,complete,OK
+1149,records100/01000/01149_lr,0,6,success,complete,OK
+3722,records100/03000/03722_lr,0,2,success,complete,OK
+19764,records100/19000/19764_lr,0,5,success,complete,OK
+9285,records100/09000/09285_lr,0,2,success,complete,OK
+10606,records100/10000/10606_lr,0,5,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.667, passed: 8/12)"
+3993,records100/03000/03993_lr,0,5,success,complete,OK
+1259,records100/01000/01259_lr,0,5,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.706, passed: 6/12)"
+1472,records100/01000/01472_lr,0,3,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.65, passed: 6/12)"
+366,records100/00000/00366_lr,0,1,success,complete,OK
+13161,records100/13000/13161_lr,0,4,success,complete,OK
+6597,records100/06000/06597_lr,0,1,success,complete,OK
+583,records100/00000/00583_lr,0,7,success,complete,OK
+8230,records100/08000/08230_lr,0,2,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.594, passed: 4/12)"
+6765,records100/06000/06765_lr,0,2,success,complete,OK
+10728,records100/10000/10728_lr,1,6,success,complete,OK
+3309,records100/03000/03309_lr,1,1,success,complete,OK
+544,records100/00000/00544_lr,1,9,success,complete,OK
+8366,records100/08000/08366_lr,1,5,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.666, passed: 6/12)"
+12710,records100/12000/12710_lr,1,10,success,complete,OK
+12978,records100/12000/12978_lr,1,3,success,complete,OK
+16282,records100/16000/16282_lr,1,2,success,complete,OK
+7706,records100/07000/07706_lr,1,6,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.75, passed: 9/12)"
+5221,records100/05000/05221_lr,1,1,success,complete,OK
+4375,records100/04000/04375_lr,1,8,success,complete,OK
+3039,records100/03000/03039_lr,1,6,success,complete,OK
+18646,records100/18000/18646_lr,1,6,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.828, passed: 9/12)"
+8195,records100/08000/08195_lr,1,10,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.703, passed: 7/12)"
+11671,records100/11000/11671_lr,1,9,success,complete,OK
+18223,records100/18000/18223_lr,1,2,success,complete,OK
+5958,records100/05000/05958_lr,1,9,success,complete,OK
+21292,records100/21000/21292_lr,1,7,success,complete,OK
+146,records100/00000/00146_lr,1,7,success,complete,OK
+8793,records100/08000/08793_lr,1,4,success,complete,OK
+17876,records100/17000/17876_lr,1,4,success,complete,OK
+2457,records100/02000/02457_lr,1,4,success,complete,OK
+13580,records100/13000/13580_lr,1,9,success,complete,OK
+10464,records100/10000/10464_lr,1,8,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.835, passed: 9/12)"
+4072,records100/04000/04072_lr,1,10,success,complete,OK
+9015,records100/09000/09015_lr,1,4,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.713, passed: 6/12)"
+14316,records100/14000/14316_lr,1,6,success,complete,OK
+10051,records100/10000/10051_lr,1,5,success,complete,OK
+16711,records100/16000/16711_lr,1,9,success,complete,OK
+3668,records100/03000/03668_lr,1,8,success,complete,OK
+177,records100/00000/00177_lr,1,4,success,complete,OK
+20655,records100/20000/20655_lr,1,4,success,complete,OK
+1918,records100/01000/01918_lr,1,5,success,complete,OK
+19370,records100/19000/19370_lr,1,10,success,complete,OK
+16952,records100/16000/16952_lr,1,10,success,complete,OK
+1415,records100/01000/01415_lr,1,5,success,complete,OK
+8983,records100/08000/08983_lr,1,4,success,complete,OK
+16418,records100/16000/16418_lr,1,6,success,complete,OK
+9480,records100/09000/09480_lr,1,9,success,complete,OK
+3246,records100/03000/03246_lr,1,10,success,complete,OK
+15535,records100/15000/15535_lr,1,4,success,complete,OK
+20921,records100/20000/20921_lr,1,2,success,complete,OK
+14908,records100/14000/14908_lr,1,9,success,complete,OK
+21051,records100/21000/21051_lr,1,1,missing,filesystem,WFDB header or signal file not found
+223,records100/00000/00223_lr,1,9,success,complete,OK
+17518,records100/17000/17518_lr,1,5,success,complete,OK
+1447,records100/01000/01447_lr,1,10,success,complete,OK
+2742,records100/02000/02742_lr,1,4,success,complete,OK
+2675,records100/02000/02675_lr,1,6,success,complete,OK
+14639,records100/14000/14639_lr,1,1,success,complete,OK
+2118,records100/02000/02118_lr,1,3,success,complete,OK
+11880,records100/11000/11880_lr,1,9,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.765, passed: 9/12)"
+7736,records100/07000/07736_lr,1,6,success,complete,OK
+21820,records100/21000/21820_lr,1,7,success,complete,OK
+4470,records100/04000/04470_lr,1,4,success,complete,OK
+968,records100/00000/00968_lr,1,10,success,complete,OK
+18596,records100/18000/18596_lr,1,9,success,complete,OK
+18582,records100/18000/18582_lr,1,6,success,complete,OK
+12867,records100/12000/12867_lr,1,3,success,complete,OK
+21584,records100/21000/21584_lr,1,10,success,complete,OK
+7537,records100/07000/07537_lr,1,1,success,complete,OK
+12631,records100/12000/12631_lr,1,10,success,complete,OK
+5349,records100/05000/05349_lr,1,4,success,complete,OK
+6795,records100/06000/06795_lr,1,3,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.825, passed: 9/12)"
+14585,records100/14000/14585_lr,1,10,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.744, passed: 9/12)"
+4143,records100/04000/04143_lr,1,2,success,complete,OK
+6702,records100/06000/06702_lr,1,9,success,complete,OK
+4981,records100/04000/04981_lr,1,8,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.647, passed: 4/12)"
+11629,records100/11000/11629_lr,1,5,success,complete,OK
+16714,records100/16000/16714_lr,1,1,success,complete,OK
+6126,records100/06000/06126_lr,1,10,success,complete,OK
+6186,records100/06000/06186_lr,1,10,success,complete,OK
+10012,records100/10000/10012_lr,1,7,success,complete,OK
+15166,records100/15000/15166_lr,1,4,success,complete,OK
+17416,records100/17000/17416_lr,1,6,success,complete,OK
+6715,records100/06000/06715_lr,1,5,success,complete,OK
+21401,records100/21000/21401_lr,1,7,success,complete,OK
+17032,records100/17000/17032_lr,1,1,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.748, passed: 9/12)"
+16202,records100/16000/16202_lr,1,4,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.672, passed: 6/12)"
+16699,records100/16000/16699_lr,1,3,success,complete,OK
+19464,records100/19000/19464_lr,1,7,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.679, passed: 7/12)"
+5175,records100/05000/05175_lr,1,5,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.75, passed: 9/12)"
+2311,records100/02000/02311_lr,1,9,success,complete,OK
+21596,records100/21000/21596_lr,1,5,success,complete,OK
+12545,records100/12000/12545_lr,1,10,success,complete,OK
+5543,records100/05000/05543_lr,1,4,success,complete,OK
+5709,records100/05000/05709_lr,1,4,missing,filesystem,WFDB header or signal file not found
+3600,records100/03000/03600_lr,1,10,success,complete,OK
+21452,records100/21000/21452_lr,1,1,success,complete,OK
+10539,records100/10000/10539_lr,1,4,success,complete,OK
+8436,records100/08000/08436_lr,1,2,success,complete,OK
+1737,records100/01000/01737_lr,1,10,success,complete,OK
+16586,records100/16000/16586_lr,1,8,success,complete,OK
+15838,records100/15000/15838_lr,1,5,success,complete,OK
+7048,records100/07000/07048_lr,1,6,success,complete,OK
+2656,records100/02000/02656_lr,1,9,success,complete,OK
+6280,records100/06000/06280_lr,1,7,success,complete,OK
+6527,records100/06000/06527_lr,1,4,success,complete,OK
+11097,records100/11000/11097_lr,1,4,success,complete,OK
+16895,records100/16000/16895_lr,1,5,success,complete,OK
+19157,records100/19000/19157_lr,1,5,success,complete,OK
+6764,records100/06000/06764_lr,1,9,success,complete,OK
+14110,records100/14000/14110_lr,1,9,success,complete,OK
+21489,records100/21000/21489_lr,1,9,success,complete,OK
+20425,records100/20000/20425_lr,1,8,success,complete,OK
+14391,records100/14000/14391_lr,1,6,success,complete,OK
+19544,records100/19000/19544_lr,1,4,success,complete,OK
+532,records100/00000/00532_lr,1,4,success,complete,OK
+16480,records100/16000/16480_lr,1,8,success,complete,OK
+8977,records100/08000/08977_lr,1,9,success,complete,OK
+13598,records100/13000/13598_lr,1,7,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.765, passed: 9/12)"
+535,records100/00000/00535_lr,1,4,success,complete,OK
+12992,records100/12000/12992_lr,1,1,success,complete,OK
+5327,records100/05000/05327_lr,1,4,success,complete,OK
+1675,records100/01000/01675_lr,1,2,success,complete,OK
+7708,records100/07000/07708_lr,1,5,success,complete,OK
+15641,records100/15000/15641_lr,1,6,success,complete,OK
+8753,records100/08000/08753_lr,1,2,success,complete,OK
+18058,records100/18000/18058_lr,1,6,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.727, passed: 9/12)"
+2536,records100/02000/02536_lr,1,4,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.782, passed: 8/12)"
+3987,records100/03000/03987_lr,1,1,success,complete,OK
+2804,records100/02000/02804_lr,1,1,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.706, passed: 8/12)"
+1371,records100/01000/01371_lr,1,4,success,complete,OK
+18467,records100/18000/18467_lr,1,5,success,complete,OK
+4978,records100/04000/04978_lr,1,1,success,complete,OK
+7673,records100/07000/07673_lr,1,6,success,complete,OK
+19573,records100/19000/19573_lr,1,7,success,complete,OK
+18636,records100/18000/18636_lr,1,4,success,complete,OK
+11047,records100/11000/11047_lr,1,3,success,complete,OK
+7655,records100/07000/07655_lr,1,3,success,complete,OK
+5957,records100/05000/05957_lr,1,4,success,complete,OK
+8669,records100/08000/08669_lr,1,6,success,complete,OK
+4869,records100/04000/04869_lr,1,6,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.72, passed: 8/12)"
+2815,records100/02000/02815_lr,1,7,success,complete,OK
+13495,records100/13000/13495_lr,1,6,rejected,feature_extraction,"Signal quality unacceptable (SQI: 0.691, passed: 6/12)"
+9096,records100/09000/09096_lr,1,3,success,complete,OK
+4009,records100/04000/04009_lr,1,4,success,complete,OK
+2450,records100/02000/02450_lr,1,7,success,complete,OK
+17565,records100/17000/17565_lr,1,1,success,complete,OK
+266,records100/00000/00266_lr,1,9,success,complete,OK
+14735,records100/14000/14735_lr,1,1,missing,filesystem,WFDB header or signal file not found
+7601,records100/07000/07601_lr,1,9,success,complete,OK
+2485,records100/02000/02485_lr,1,4,success,complete,OK
+21677,records100/21000/21677_lr,1,7,success,complete,OK
+7001,records100/07000/07001_lr,1,4,success,complete,OK
+17321,records100/17000/17321_lr,1,4,success,complete,OK
+13151,records100/13000/13151_lr,1,3,success,complete,OK
+13083,records100/13000/13083_lr,1,5,success,complete,OK
+17281,records100/17000/17281_lr,1,2,success,complete,OK
+11043,records100/11000/11043_lr,1,2,success,complete,OK
+964,records100/00000/00964_lr,1,2,success,complete,OK

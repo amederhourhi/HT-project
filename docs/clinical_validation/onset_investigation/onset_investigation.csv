@@ -1,0 +1,8 @@
+record_id,expert_lead_ii_median_onset_ms,expert_lead_ii_onset_iqr_ms,original_global_onset_ms,v4_global_onset_ms,v4_minus_original_ms,expert_beats,isolated_offset_lead
+72,-58.0,2.5,-68.0,-98.0,-30.0,8,
+85,-37.0,5.5,-36.0,-66.0,-30.0,10,
+31,-54.0,8.0,-76.0,-42.0,34.0,9,
+45,-29.0,18.0,-60.0,-76.0,-16.0,8,
+59,-68.0,10.0,-70.0,-100.0,-30.0,6,
+20,-59.0,2.5,-50.0,-62.0,-12.0,8,
+23,-43.0,6.0,-34.0,-64.0,-30.0,8,

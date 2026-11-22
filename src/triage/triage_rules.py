@@ -9,6 +9,7 @@ from collections import defaultdict
 from typing import NamedTuple
 
 from src.triage.leads import find_stemi_pairs, normalise_age, normalise_sex
+from src.triage.quality_handoff import summarize_quality_handoff
 
 # ---------------------------------------------------------
 # Block 1: Finding Severity Constants & Data Structure
@@ -72,7 +73,17 @@ class ClinicalTriageEngine:
         findings.extend(self._check_rhythm(biomarkers))
         findings.extend(self._check_conduction(biomarkers))
 
-        return self._assign_tier(ensemble_result["risk_score_pct"], findings)
+        verdict = self._assign_tier(
+            ensemble_result["risk_score_pct"],
+            findings,
+        )
+
+        verdict["quality_assessment"] = summarize_quality_handoff(
+            ensemble_result,
+            findings,
+        )
+
+        return verdict
 
     # ---------------------------------------------------------
     # Block 4: Guardrail 1 - Contiguous-Lead ST Elevation (Grouped with Provenance)

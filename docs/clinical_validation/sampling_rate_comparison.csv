@@ -1,0 +1,3 @@
+ecg_id,status_100hz,status_500hz,reason_100hz,reason_500hz,st_V1_100hz_mv,st_V1_500hz_mv,st_V1_delta_mv,st_V2_100hz_mv,st_V2_500hz_mv,st_V2_delta_mv,st_V3_100hz_mv,st_V3_500hz_mv,st_V3_delta_mv,st_V4_100hz_mv,st_V4_500hz_mv,st_V4_delta_mv,qrs_100hz_ms,qrs_500hz_ms,qrs_delta_ms,st_pairs_100hz,st_pairs_500hz,st_pair_decision_changed
+1918,success,success,OK,OK,0.141,0.135,-0.006,0.316,0.245,-0.071,0.201,0.183,-0.018,0.046,0.045,-0.001,120.0,122.0,2.0,V1/V2;V2/V3,V1/V2;V2/V3,False
+14639,success,success,OK,OK,0.042,0.006,-0.036,0.194,0.129,-0.065,0.159,0.102,-0.057,0.001,0.023,0.022,100.0,84.0,-16.0,V2/V3,,True

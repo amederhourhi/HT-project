@@ -1,0 +1,107 @@
+{
+  "contract_version": "rf_v3_research_candidate_v1",
+  "created_utc": "2026-11-19T15:28:49.655776+00:00",
+  "git_commit": "ab4fd2e0a9804bbd7bbc6532ba373ecfca44084f",
+  "status": "research_candidate",
+  "sqi_version": "v3",
+  "quality_policy": "fail_closed_research_gate",
+  "feature_order": [
+    "heart_rate_bpm",
+    "mean_rr_sec",
+    "sdnn_ms",
+    "rmssd_ms",
+    "qrs_duration_ms",
+    "max_st_elevation_mv",
+    "max_st_depression_mv",
+    "st_anterior_max",
+    "st_inferior_max",
+    "st_lateral_max",
+    "st_I",
+    "st_II",
+    "st_III",
+    "st_AVR",
+    "st_AVL",
+    "st_AVF",
+    "st_V1",
+    "st_V2",
+    "st_V3",
+    "st_V4",
+    "st_V5",
+    "st_V6",
+    "overall_sqi"
+  ],
+  "class_order": [
+    0,
+    1
+  ],
+  "training": {
+    "folds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "records": 222,
+    "random_seed": 42,
+    "n_estimators": 100,
+    "max_depth": 5,
+    "class_weight": "balanced",
+    "calibration_method": "sigmoid",
+    "calibration_folds": 5,
+    "calibration_grouping": "patient_id",
+    "calibration_ensemble": true
+  },
+  "validation": {
+    "fold": 9,
+    "metrics": {
+      "records": 28,
+      "positives": 17,
+      "threshold": 0.5,
+      "accuracy": 0.6785714285714286,
+      "sensitivity": 0.5882352941176471,
+      "specificity": 0.8181818181818182,
+      "roc_auc": 0.625668449197861,
+      "pr_auc": 0.8005062366827074,
+      "brier": 0.24043254542366704,
+      "log_loss": 0.6818586380513141,
+      "confusion_matrix": {
+        "tn": 9,
+        "fp": 2,
+        "fn": 7,
+        "tp": 10
+      }
+    }
+  },
+  "test": {
+    "fold": 10,
+    "records": 25,
+    "evaluated": false
+  },
+  "artifacts": {
+    "candidate_model": "models/checkpoints/interpretable_model_v3_research_candidate.joblib",
+    "candidate_model_sha256": "dab68bde12406f5310b73d4bcde8df325c83e5a2adaeae4626523aa45d58e009",
+    "training_dataset_sha256": "a05550d7caecd1fcd8db1bff3587267f9bcfd7758df5d4a901e212f68c259fca",
+    "dataset_contract_sha256": "f0d6521fc3f1265765c226a5009af7d2cb81f6479782e03aa9330d5a377168a2",
+    "quality_audit_sha256": "b35f0fce05565f7aef5c38d60ce3ce9f11afc16ce462ec16a250f7b74a377c85",
+    "training_script_sha256": "23f41d85db751d51038a69ad976a399c5c4b519f87ab98e059d5de36042a14dd"
+  },
+  "environment": {
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0"
+  },
+  "deployed_model_replaced": false,
+  "clinical_validation": "not_established",
+  "limitations": [
+    "Small, quality-selected research cohort",
+    "No external validation",
+    "Fold 10 not evaluated in this training run",
+    "Existing V1 checkpoint lineage remains unverified",
+    "SQI V3 compatibility is specific to this research pipeline"
+  ]
+}

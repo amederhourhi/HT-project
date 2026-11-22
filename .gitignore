@@ -41,3 +41,7 @@ docs/sqi_audit/baseline_regressions/
 # Experimental model checkpoints
 models/checkpoints/*_fold10_candidate.pt
 models/checkpoints/*_fold10_candidate.joblib
+# Research checkpoints are generated locally.
+models/checkpoints/*_v3_research_candidate.joblib
+models/checkpoints/*_v1_grouped_comparator.joblib
+data/ludb_reference/

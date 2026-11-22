@@ -139,6 +139,39 @@ def _scp_code_set(raw_scp_codes: str) -> set:
         return set()
 
 
+def load_pinned_cohort(pin_path: Path) -> pd.DataFrame:
+    """Load and validate the frozen ECG cohort definition."""
+
+    # Read as text first so malformed values are not silently converted.
+    pin = pd.read_csv(pin_path, dtype=str)
+
+    required = ["ecg_id", "strat_fold", "target_label"]
+
+    if list(pin.columns) != required or pin.empty:
+        raise ValueError(
+            "Cohort pin must contain exactly: "
+            "ecg_id,strat_fold,target_label"
+        )
+
+    # Check values before converting them to integers.
+    patterns = {
+        "ecg_id": r"[1-9][0-9]*",
+        "strat_fold": r"(?:10|[1-9])",
+        "target_label": r"[01]",
+    }
+
+    for column, pattern in patterns.items():
+        if not pin[column].str.fullmatch(pattern).fillna(False).all():
+            raise ValueError(f"Invalid values in {column}")
+
+        pin[column] = pin[column].astype(int)
+
+    # An ECG must appear exactly once in the cohort.
+    if pin["ecg_id"].duplicated().any():
+        raise ValueError("Duplicate ECG IDs in cohort pin")
+
+    return pin
+
 def build_cohort_manifest(
     pinned_ids_csv: Path,
     database_csv: Path,
@@ -158,14 +191,24 @@ def build_cohort_manifest(
     Returns:
         The manifest as a DataFrame, indexed by ecg_id.
     """
-    pinned = pd.read_csv(pinned_ids_csv, usecols=["ecg_id"])["ecg_id"].astype(int)
+
+    # Load the complete, validated cohort contract.
+    pin = load_pinned_cohort(pinned_ids_csv)
+
+    # Official PTB-XL metadata.
     db = pd.read_csv(database_csv).set_index("ecg_id")
 
-    missing = sorted(set(pinned) - set(db.index))
-    if missing:
-        raise KeyError(f"Pinned ecg_ids absent from ptbxl_database.csv: {missing[:10]}")
+    if db.index.has_duplicates:
+        raise ValueError("Duplicate ECG IDs in PTB-XL metadata")
 
-    manifest = db.loc[pinned].copy()
+    # Every pinned record must exist in the official dataset.
+    missing = sorted(set(pin["ecg_id"]) - set(db.index))
+
+    if missing:
+        raise ValueError(f"ECG IDs missing from PTB-XL: {missing[:10]}")
+
+    # Preserve the original cohort membership and record order.
+    manifest = db.loc[pin["ecg_id"]].copy()
 
     # Age sanity: out-of-window ages become NaN (unknown) instead of being
     # carried downstream as if they were real patients.
@@ -179,17 +222,55 @@ def build_cohort_manifest(
               f"age set to unknown (NaN).")
         manifest.loc[implausible_age, "age"] = float("nan")
 
-    # target_label: 1 = infarction-family SCP code present, 0 = NORM reference.
-    # Derived here rather than copied so the definition lives in one place.
-    codes = manifest["scp_codes"].map(_scp_code_set)
-    manifest["target_label"] = codes.map(
-        lambda c: 1 if c & INFARCTION_SUBCLASSES else 0
-    ).astype(int)
 
-    unlabelled = codes.map(lambda c: "NORM" not in c and not (c & INFARCTION_SUBCLASSES))
-    if unlabelled.any():
-        print(f"[warn] {int(unlabelled.sum())} records carry neither NORM nor an "
-              f"infarction code; they are kept but will default to label 0.")
+    # Derive labels from official diagnostic codes.
+    codes = manifest["scp_codes"].map(_scp_code_set)
+
+    is_mi = codes.map(
+        lambda c: bool(c & INFARCTION_SUBCLASSES)
+    )
+    is_norm = codes.map(lambda c: "NORM" in c)
+
+    # A record cannot be both categories or neither category.
+    ambiguous = (is_mi & is_norm) | ~(is_mi | is_norm)
+
+    if ambiguous.any():
+        bad_ids = manifest.index[ambiguous].tolist()
+        raise ValueError(
+            f"Ambiguous diagnostic labels: {bad_ids[:10]}"
+        )
+
+    manifest["target_label"] = is_mi.astype(int)
+
+    # Compare official metadata against the frozen cohort pin.
+    expected = pin.set_index("ecg_id")
+
+    label_changed = manifest["target_label"].ne(
+        expected["target_label"]
+    )
+    fold_changed = manifest["strat_fold"].ne(
+        expected["strat_fold"]
+    )
+
+    if label_changed.any() or fold_changed.any():
+        bad_ids = manifest.index[
+            label_changed | fold_changed
+        ].tolist()
+
+        raise ValueError(
+            f"Pinned labels or folds do not match PTB-XL: {bad_ids[:10]}"
+        )
+
+    # Ensure one patient never appears in multiple folds.
+    if manifest["patient_id"].isna().any():
+        raise ValueError("Missing patient IDs in cohort")
+
+    patient_folds = manifest.groupby("patient_id")[
+        "strat_fold"
+    ].nunique()
+
+    if (patient_folds > 1).any():
+        raise ValueError("Patient overlap across folds")
 
     keep = [
         "ecg_id", "patient_id", "filename_lr", "target_label", "strat_fold",

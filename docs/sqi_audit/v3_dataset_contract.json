@@ -1,0 +1,89 @@
+{
+  "contract_version": "v3_research_dataset_v1",
+  "generated_utc": "2026-11-19T15:23:04.370687+00:00",
+  "git_commit": "ab4fd2e0a9804bbd7bbc6532ba373ecfca44084f",
+  "sqi_version": "v3",
+  "quality_policy": "fail_closed_research_gate",
+  "model_training_performed": false,
+  "model_compatibility_verified": false,
+  "feature_order": [
+    "heart_rate_bpm",
+    "mean_rr_sec",
+    "sdnn_ms",
+    "rmssd_ms",
+    "qrs_duration_ms",
+    "max_st_elevation_mv",
+    "max_st_depression_mv",
+    "st_anterior_max",
+    "st_inferior_max",
+    "st_lateral_max",
+    "st_I",
+    "st_II",
+    "st_III",
+    "st_AVR",
+    "st_AVL",
+    "st_AVF",
+    "st_V1",
+    "st_V2",
+    "st_V3",
+    "st_V4",
+    "st_V5",
+    "st_V6",
+    "overall_sqi"
+  ],
+  "record_count": 275,
+  "split_label_counts": [
+    {
+      "split": "test",
+      "target_label": 0,
+      "count": 13
+    },
+    {
+      "split": "test",
+      "target_label": 1,
+      "count": 12
+    },
+    {
+      "split": "train",
+      "target_label": 0,
+      "count": 119
+    },
+    {
+      "split": "train",
+      "target_label": 1,
+      "count": 103
+    },
+    {
+      "split": "validation",
+      "target_label": 0,
+      "count": 11
+    },
+    {
+      "split": "validation",
+      "target_label": 1,
+      "count": 17
+    }
+  ],
+  "inputs": {
+    "manifest_sha256": "127cea29cf2b8eebf8c3d570fe50f9fb08a92b1075e14c782d4f67f721db7232",
+    "quality_audit_sha256": "b35f0fce05565f7aef5c38d60ce3ce9f11afc16ce462ec16a250f7b74a377c85"
+  },
+  "dataset": {
+    "path": "data/processed/clinical_features_v3_candidate.csv",
+    "sha256": "a05550d7caecd1fcd8db1bff3587267f9bcfd7758df5d4a901e212f68c259fca"
+  },
+  "source_sha256": {
+    "src/data/ecg_loader.py": "dc099edbddbc4cea251cf7d8d99c94b09a15e65a9639f8f4c4e4aed9d13a3d1b",
+    "src/dsp/input_validation.py": "c7a5ab904b3aa50db6faf9ae9879aa402dd19d2d7f7ae754f45a1b8810855440",
+    "src/dsp/filters.py": "1171407398b9cbc6ae71559464f1a8e1e4d8424a09a7de30dbc3b8faf09d6781",
+    "src/dsp/sqi_v3.py": "e766b34df7559a3c9bd3bc6a06e5dfa6038523a00c56696992d9b4a68b485ac9",
+    "src/features/extract_features.py": "ef5a7b8e81a27b2b77d434ade891a484f00fe3bf2f64c3f11252f251fdc60f1c",
+    "src/features/quality_contract.py": "98ae3f62e9b2501d5b5178a8e29fc74c0da9b33e6fafba54e7c3d7095b1d8e14",
+    "src/triage/inference_quality.py": "3df7a61d30d3f5a35e9dc2cdf589cfa8f5072154decdc637bf97799bbda5439e"
+  },
+  "limitations": [
+    "SQI V3 quality flags are experimental",
+    "Training lineage of deployed checkpoints is unverified",
+    "No clinical validation has been established"
+  ]
+}
