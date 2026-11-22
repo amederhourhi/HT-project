@@ -1,6 +1,7 @@
 
 name: CardioSense Tests
 
+# Run automated checks on every push and pull request.
 on:
   push:
   pull_request:
@@ -11,27 +12,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Download the repository onto the CI runner.
       - name: Check out repository
         uses: actions/checkout@v4
 
+      # 2. Use a supported, fixed Python version.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
+      # 3. Install the project and testing dependencies.
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
+          python -m pip check
 
+      # 4. Check Python syntax before running tests.
+      - name: Check Python syntax
+        run: python -m compileall -q src
+
+      # 5. Run deterministic, offline regression tests.
+      #
+      # These tests use committed audit data, synthetic
+      # fixtures, and mocks where required.
+      #
+      # Do not include scripts that download full ECG
+      # datasets, retrain models, or modify research results.
       - name: Run deterministic test suite
         run: |
           python -m pytest -q \
-            tests/test_triage_rules.py \
-            tests/test_filters_unit.py \
+            tests/test_cohort_contract.py \
             tests/test_input_validation.py \
             tests/test_ecg_loader.py \
+            tests/test_ecg_dataset_contract.py \
+            tests/test_ensemble_input_contract.py \
+            tests/test_api_input_contract.py \
+            tests/test_triage_rules.py \
+            tests/test_filters_unit.py \
             tests/test_feature_quality_contract.py \
             tests/test_feature_sqi_selection.py \
             tests/test_sqi_v3.py \
@@ -47,5 +67,6 @@ jobs:
             tests/test_sqi_rf_ablation.py \
             tests/test_sqi_ablation_uncertainty.py
 
+      # 6. Preserve the existing standalone triage check.
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py
