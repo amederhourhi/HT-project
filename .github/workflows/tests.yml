@@ -1,7 +1,7 @@
 
 name: CardioSense Tests
 
-# Run automated checks on every push and pull request.
+# Run deterministic checks on pushes and pull requests.
 on:
   push:
   pull_request:
@@ -12,35 +12,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Download the repository onto the CI runner.
+      # ---------------------------------------------------
+      # 1. Check out the repository
+      # ---------------------------------------------------
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # 2. Use a supported, fixed Python version.
+      # ---------------------------------------------------
+      # 2. Configure Python
+      # ---------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # 3. Install the project and testing dependencies.
+      # ---------------------------------------------------
+      # 3. Install project dependencies
+      # ---------------------------------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m pip check
 
-      # 4. Check Python syntax before running tests.
+      # ---------------------------------------------------
+      # 4. Validate Python syntax
+      # ---------------------------------------------------
       - name: Check Python syntax
         run: python -m compileall -q src
 
-      # 5. Run deterministic, offline regression tests.
+      # ---------------------------------------------------
+      # 5. Run deterministic offline regression tests
+      # ---------------------------------------------------
+      # Includes:
+      # - Original project contract tests
+      # - ECG input and signal validation
+      # - Feature and SQI regression tests
+      # - Model compatibility research tests
+      # - Milestone 4 quality metadata handoff
+      # - Milestone 4 research report validation
+      # - Milestone 4 ST measurement availability
+      # - Milestone 4 API/report measurement parity
       #
-      # These tests use committed audit data, synthetic
-      # fixtures, and mocks where required.
-      #
-      # Do not include scripts that download full ECG
-      # datasets, retrain models, or modify research results.
+      # No real ECG downloads or model retraining.
+      # ---------------------------------------------------
+
       - name: Run deterministic test suite
         run: |
           python -m pytest -q \
@@ -65,8 +82,18 @@ jobs:
             tests/test_v3_rf_candidate.py \
             tests/test_v1_v3_rf_comparison.py \
             tests/test_sqi_rf_ablation.py \
-            tests/test_sqi_ablation_uncertainty.py
+            tests/test_sqi_ablation_uncertainty.py \
+            tests/test_quality_handoff.py \
+            tests/test_st_provenance.py \
+            tests/test_legacy_quality_handoff.py \
+            tests/test_report_validity.py \
+            tests/test_report_st_availability.py \
+            tests/test_report_measurement_parity.py \
+            tests/test_st_measurement_view.py \
+            tests/test_api_measurement_view.py
 
-      # 6. Preserve the existing standalone triage check.
+      # ---------------------------------------------------
+      # 6. Preserve standalone triage regression
+      # ---------------------------------------------------
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py

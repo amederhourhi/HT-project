@@ -9,6 +9,7 @@ Two separate research pathways:
    - Extract V1 clinical features
    - Run Random Forest and 1D CNN
    - Combine probabilities
+   - Preserve measurement-quality metadata
    - Apply research triage rules
 
 2. Experimental V3 quality assessment:
@@ -16,6 +17,9 @@ Two separate research pathways:
    - Extract V3 quality-aware features
    - Evaluate research readiness
    - Do NOT run unverified model checkpoints
+
+Quality metadata is advisory. It does not modify model
+probabilities or clinical triage routing.
 
 This is a research prototype, not a clinically validated
 diagnostic or emergency-triage system.
@@ -39,24 +43,30 @@ from src.features.extract_features import (
     extract_clinical_features,
 )
 from src.models.ecg_cnn import CardioNet1D
-from src.triage.inference_quality import evaluate_research_readiness
+from src.triage.inference_quality import (
+    evaluate_research_readiness,
+)
 from src.triage.triage_rules import ClinicalTriageEngine
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-# Preserve the original list-based interface for existing tests.
+# Preserve the original list-based interface.
 DEFAULT_LEADS = list(STANDARD_LEADS)
 
 
 class CardioSenseEnsemble:
-    """Legacy V1 ensemble with separate experimental V3 quality assessment."""
+    """
+    Legacy V1 ensemble with a separate experimental
+    V3 quality-assessment pathway.
+    """
 
-    # ---------------------------------------------------------
-    # 1. Initialize models
-    # ---------------------------------------------------------
+    # =====================================================
+    # 1. Initialize trained models
+    # =====================================================
+
     def __init__(self, checkpoints_dir=None):
-        """Load existing V1-compatible RF and CNN checkpoints."""
+        """Load existing V1 RF and CNN checkpoints."""
 
         self.checkpoints_dir = (
             Path(checkpoints_dir)
@@ -65,13 +75,16 @@ class CardioSenseEnsemble:
         )
 
         rf_path = (
-            self.checkpoints_dir / "interpretable_model.joblib"
-        )
-        cnn_path = (
-            self.checkpoints_dir / "ecg_cnn.pt"
+            self.checkpoints_dir
+            / "interpretable_model.joblib"
         )
 
-        # Fail explicitly when required checkpoints are absent.
+        cnn_path = (
+            self.checkpoints_dir
+            / "ecg_cnn.pt"
+        )
+
+        # Both checkpoints must exist.
         missing = [
             str(path)
             for path in (rf_path, cnn_path)
@@ -86,7 +99,7 @@ class CardioSenseEnsemble:
 
         self.device = torch.device("cpu")
 
-        # Load only trusted, project-generated model artifacts.
+        # Load only trusted project-generated artifacts.
         self.rf_model = joblib.load(rf_path)
 
         self.cnn_model = CardioNet1D(
@@ -100,8 +113,7 @@ class CardioSenseEnsemble:
             weights_only=True,
         )
 
-        # Support both direct state dictionaries and
-        # checkpoints containing "model_state_dict".
+        # Support both checkpoint layouts.
         state_dict = (
             checkpoint["model_state_dict"]
             if isinstance(checkpoint, dict)
@@ -114,21 +126,23 @@ class CardioSenseEnsemble:
 
         self.triage_engine = ClinicalTriageEngine()
 
-    # ---------------------------------------------------------
+    # =====================================================
     # 2. Experimental V3 quality assessment
-    # ---------------------------------------------------------
+    # =====================================================
+
     @staticmethod
     def assess_v3_record(record_path):
-        """Assess WFDB quality without running RF/CNN inference.
+        """
+        Assess WFDB quality without model inference.
 
-        A successful quality assessment does not establish
-        compatibility with the existing V1-trained checkpoints.
+        A successful V3 assessment does not establish
+        compatibility with V1-trained RF/CNN checkpoints.
         """
 
-        # Centralized WFDB loader:
-        # validates units, sampling rate, and lead order.
-        signals_mv, fs, lead_names = load_standardized_ecg(
-            record_path
+        # Validate waveform structure, lead ordering,
+        # sampling rate, and physical voltage units.
+        signals_mv, fs, lead_names = (
+            load_standardized_ecg(record_path)
         )
 
         extraction = extract_clinical_features(
@@ -142,30 +156,37 @@ class CardioSenseEnsemble:
 
         if status not in ("success", "rejected"):
             raise ValueError(
-                f"Unexpected feature extraction status: {status}"
+                "Unexpected feature extraction status: "
+                f"{status}"
             )
 
-        # Check V3 measurement-quality metadata and the
-        # readiness of every required RF feature.
-        quality = evaluate_research_readiness(extraction)
+        # Evaluate V3 technical and feature readiness.
+        quality = evaluate_research_readiness(
+            extraction
+        )
 
         if status == "rejected":
+
             outcome = "abstained"
+
             reason = extraction.get(
                 "reason",
                 quality["reason"],
             )
 
         elif not quality["allow_research_scoring"]:
+
             outcome = "abstained"
             reason = quality["reason"]
 
         else:
-            # Do not score with older V1 checkpoints.
+
+            # Do not score using incompatible V1 models.
             outcome = "quality_eligible_unscored"
+
             reason = (
-                "Quality gate passed, but V3 model compatibility "
-                "has not been established"
+                "Quality gate passed, but V3 model "
+                "compatibility has not been established"
             )
 
         return {
@@ -173,44 +194,55 @@ class CardioSenseEnsemble:
             "reason": reason,
             "sqi_version": "v3",
             "quality_decision": quality,
-            "sqi_details": extraction.get("sqi_details"),
+
+            "sqi_details": extraction.get(
+                "sqi_details"
+            ),
+
             "quality_contract": extraction.get(
                 "quality_contract"
             ),
+
             "model_compatibility": "not_verified",
             "model_scoring_performed": False,
             "risk_score_pct": None,
             "clinical_triage": None,
         }
 
-    # ---------------------------------------------------------
+    # =====================================================
     # 3. Probability validation
-    # ---------------------------------------------------------
+    # =====================================================
+
     @staticmethod
     def _validate_probability(value, model_name):
-        """Require a finite probability between zero and one."""
+        """
+        Require a finite model probability within [0, 1].
+        """
 
         probability = float(value)
 
         if not np.isfinite(probability):
             raise ValueError(
-                f"{model_name} returned a non-finite probability."
+                f"{model_name} returned a "
+                "non-finite probability."
             )
 
         if not 0.0 <= probability <= 1.0:
             raise ValueError(
-                f"{model_name} returned a probability outside [0, 1]."
+                f"{model_name} returned a probability "
+                "outside [0, 1]."
             )
 
         return probability
 
-    # ---------------------------------------------------------
+    # =====================================================
     # 4. Random Forest inference
-    # ---------------------------------------------------------
-    def _predict_rf(self, features):
-        """Run the existing feature-based Random Forest."""
+    # =====================================================
 
-        # Preserve the exact training feature order.
+    def _predict_rf(self, features):
+        """Predict using the existing V1 Random Forest."""
+
+        # Preserve the exact feature order used in training.
         frame = pd.DataFrame([features])[FEATURE_COLUMNS]
 
         probability = self.rf_model.predict_proba(
@@ -222,39 +254,46 @@ class CardioSenseEnsemble:
             "Random Forest",
         )
 
-    # ---------------------------------------------------------
+    # =====================================================
     # 5. CNN inference
-    # ---------------------------------------------------------
-    def _predict_cnn(self, signals_mv, fs):
-        """Classify an already standardized 12-lead ECG.
+    # =====================================================
 
-        IMPORTANT:
-        The caller must supply signals in millivolts,
-        with channels in STANDARD_LEADS order.
+    def _predict_cnn(self, signals_mv, fs):
+        """
+        Predict using a standardized 12-lead ECG.
+
+        Expected:
+            - Physical units: mV
+            - Lead order: STANDARD_LEADS
+            - Shape: (1000, 12)
+            - Sampling frequency: 100 Hz
         """
 
-        # Preserve the legacy preprocessing policy.
+        # Apply the existing ECG filtering policy.
         cleaned = filter_ecg(
             signals_mv,
             fs=fs,
         )
 
-        # Normalize independently for each lead.
+        # Per-lead normalization.
         mean = np.mean(
             cleaned,
             axis=0,
             keepdims=True,
         )
 
-        std = np.std(
-            cleaned,
-            axis=0,
-            keepdims=True,
-        ) + 1e-6
+        std = (
+            np.std(
+                cleaned,
+                axis=0,
+                keepdims=True,
+            )
+            + 1e-6
+        )
 
         normalized = (cleaned - mean) / std
 
-        # CNN expects (batch, channels, samples).
+        # Convert:
         # (1000, 12) -> (1, 12, 1000)
         waveform = torch.as_tensor(
             normalized.T.copy(),
@@ -263,6 +302,7 @@ class CardioSenseEnsemble:
         ).unsqueeze(0)
 
         with torch.inference_mode():
+
             logits = self.cnn_model(waveform)
 
             probability = torch.softmax(
@@ -275,21 +315,24 @@ class CardioSenseEnsemble:
             "1D-CNN",
         )
 
-    # ---------------------------------------------------------
-    # 6. Statistical risk tiers
-    # ---------------------------------------------------------
+    # =====================================================
+    # 6. Statistical risk classification
+    # =====================================================
+
     @staticmethod
     def _statistical_tier(risk_score_pct):
-        """Apply the existing prototype probability bands.
+        """
+        Apply existing research probability thresholds.
 
-        These are project-specific research thresholds,
-        not clinically validated intervention cutoffs.
+        These are project-specific thresholds, not
+        clinically validated intervention cutoffs.
         """
 
         if risk_score_pct < 35.0:
             return (
                 "TIER_1_ROUTINE",
-                "Routine Follow-up (Normal / Sub-acute findings)",
+                "Routine Follow-up "
+                "(Normal / Sub-acute findings)",
             )
 
         if risk_score_pct < 65.0:
@@ -305,28 +348,43 @@ class CardioSenseEnsemble:
             "(High Risk Infarction Suspected)",
         )
 
-    # ---------------------------------------------------------
-    # 7. Anatomical territory summary
-    # ---------------------------------------------------------
+    # =====================================================
+    # 7. Anatomical territory analysis
+    # =====================================================
+
     @staticmethod
     def _analyze_territories(features):
-        """Preserve the existing research territory summary."""
+        """Preserve existing territory aggregation."""
 
         territories = {
             "Anterior / Septal (LAD)": {
-                "artery": "Left Anterior Descending (LAD)",
+                "artery": (
+                    "Left Anterior Descending (LAD)"
+                ),
                 "leads": ["V1", "V2", "V3", "V4"],
-                "max_st_mv": features["st_anterior_max"],
+                "max_st_mv": features[
+                    "st_anterior_max"
+                ],
             },
+
             "Inferior (RCA)": {
-                "artery": "Right Coronary Artery (RCA)",
+                "artery": (
+                    "Right Coronary Artery (RCA)"
+                ),
                 "leads": ["II", "III", "AVF"],
-                "max_st_mv": features["st_inferior_max"],
+                "max_st_mv": features[
+                    "st_inferior_max"
+                ],
             },
+
             "Lateral (LCx)": {
-                "artery": "Left Circumflex (LCx)",
+                "artery": (
+                    "Left Circumflex (LCx)"
+                ),
                 "leads": ["I", "AVL", "V5", "V6"],
-                "max_st_mv": features["st_lateral_max"],
+                "max_st_mv": features[
+                    "st_lateral_max"
+                ],
             },
         }
 
@@ -335,7 +393,7 @@ class CardioSenseEnsemble:
             key=lambda item: item[1]["max_st_mv"],
         )
 
-        # Preserve previous threshold behavior.
+        # Preserve the historical threshold behavior.
         culprit_artery = (
             primary_data["artery"]
             if primary_data["max_st_mv"] >= 0.10
@@ -348,9 +406,10 @@ class CardioSenseEnsemble:
             culprit_artery,
         )
 
-    # ---------------------------------------------------------
+    # =====================================================
     # 8. Legacy V1 ensemble prediction
-    # ---------------------------------------------------------
+    # =====================================================
+
     def predict(
         self,
         raw_signals,
@@ -361,64 +420,64 @@ class CardioSenseEnsemble:
         *,
         units="mV",
     ):
-        """Run the existing V1-trained ensemble.
+        """
+        Run the existing V1 RF/CNN ensemble.
 
         Parameters
         ----------
         raw_signals:
-            ECG matrix in its ORIGINAL channel order.
+            Original ECG matrix (samples, channels).
 
         fs:
             Sampling frequency in Hz.
 
         lead_names:
-            Original channel names matching raw_signals.
-            Explicit names are required.
+            Names corresponding to original channels.
 
         age, sex:
-            Optional patient context for research rules.
+            Optional demographic information.
 
         units:
-            Original ECG voltage units, either one string
+            Original voltage units. May be one string
             or one unit per channel.
 
-            Defaults to "mV" for legacy compatibility.
-            New WFDB callers should pass the actual units.
+        Returns
+        -------
+        dict:
+            Ensemble probabilities, clinical biomarkers,
+            quality metadata, and research triage output.
 
         Notes
         -----
         This pathway uses V1-trained checkpoints.
-        It does not apply V3 measurement-quality gates.
+
+        V3 quality gates are not applied to V1 inference.
+
+        Forwarded quality metadata is advisory and does
+        not modify inference or routing decisions.
         """
 
-        # -----------------------------------------------------
-        # Step A: Validate and standardize the ECG.
-        # -----------------------------------------------------
-        # This is the key Milestone 2 correction.
-        #
-        # The validator:
-        # - Checks lead names and uniqueness
-        # - Reorders the actual waveform channels
-        # - Converts physical units to millivolts
-        # - Rejects malformed and non-finite samples
-        # - Verifies the sampling frequency
-        #
-        # Both models will use this same standardized ECG.
-        signals_mv, standard_leads = validate_ecg_input(
-            raw_signals=raw_signals,
-            fs=fs,
-            lead_names=lead_names,
-            units=units,
+        # -------------------------------------------------
+        # A. Validate and standardize incoming ECG
+        # -------------------------------------------------
+
+        signals_mv, standard_leads = (
+            validate_ecg_input(
+                raw_signals=raw_signals,
+                fs=fs,
+                lead_names=lead_names,
+                units=units,
+            )
         )
 
-        # -----------------------------------------------------
-        # Step B: Enforce the legacy CNN input dimensions.
-        # -----------------------------------------------------
-        # Current CNN checkpoints expect 10-second,
-        # 100 Hz, 12-lead ECG recordings.
-        #
-        # No implicit resampling, padding or truncation.
-        if fs != 100.0 or signals_mv.shape != (1000, 12):
+        # -------------------------------------------------
+        # B. Enforce legacy model dimensions
+        # -------------------------------------------------
+
+        if (
+            fs != 100.0
+            or signals_mv.shape != (1000, 12)
+        ):
             raise ValueError(
                 "Legacy ensemble requires fs=100 Hz "
                 "and shape=(1000, 12). "
@@ -426,9 +485,10 @@ class CardioSenseEnsemble:
                 f"shape={signals_mv.shape}"
             )
 
-        # -----------------------------------------------------
-        # Step C: Extract V1 clinical features.
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # C. Extract legacy V1 clinical features
+        # -------------------------------------------------
+
         feat_result = extract_clinical_features(
             signals_mv,
             fs=fs,
@@ -436,7 +496,9 @@ class CardioSenseEnsemble:
             sqi_version="v1",
         )
 
+        # Do not score rejected recordings.
         if feat_result["status"] == "rejected":
+
             return {
                 "status": "rejected",
                 "reason": feat_result["reason"],
@@ -453,28 +515,32 @@ class CardioSenseEnsemble:
 
         features = feat_result["features"]
 
-        # -----------------------------------------------------
-        # Step D: Collect trusted ST measurements.
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # D. Collect trusted ST measurements
+        # -------------------------------------------------
+
         trusted_leads = [
             lead.strip()
             for lead in features["leads_trusted"].split(",")
             if lead.strip()
         ]
 
+        # Keep only ST readings from trusted leads.
+        #
+        # Untrusted leads are omitted rather than
+        # represented by fabricated zero measurements.
         st_by_lead = {
-            lead: float(features[f"st_{lead.upper()}"])
+            lead: float(
+                features[f"st_{lead.upper()}"]
+            )
             for lead in trusted_leads
         }
 
-        # -----------------------------------------------------
-        # Step E: Run both models on the SAME recording.
-        # -----------------------------------------------------
-        # RF receives features extracted from signals_mv.
-        # CNN receives signals_mv directly.
-        #
-        # This prevents disagreement caused solely by
-        # different lead ordering or voltage units.
+        # -------------------------------------------------
+        # E. Run the two existing models
+        # -------------------------------------------------
+
+        # Both models use the same standardized ECG.
         p_rf = self._predict_rf(features)
 
         p_cnn = self._predict_cnn(
@@ -482,8 +548,11 @@ class CardioSenseEnsemble:
             fs,
         )
 
-        # Preserve the existing 50/50 fusion policy.
-        p_composite = 0.5 * p_rf + 0.5 * p_cnn
+        # Preserve historical 50/50 fusion.
+        p_composite = (
+            0.5 * p_rf
+            + 0.5 * p_cnn
+        )
 
         risk_score_pct = round(
             p_composite * 100.0,
@@ -491,66 +560,152 @@ class CardioSenseEnsemble:
         )
 
         statistical_tier, statistical_action = (
-            self._statistical_tier(risk_score_pct)
+            self._statistical_tier(
+                risk_score_pct
+            )
         )
 
-        # -----------------------------------------------------
-        # Step F: Summarize anatomical territories.
-        # -----------------------------------------------------
-        territories, primary_territory, culprit_artery = (
-            self._analyze_territories(features)
-        )
+        # -------------------------------------------------
+        # F. Analyze anatomical territories
+        # -------------------------------------------------
 
-        # -----------------------------------------------------
-        # Step G: Build the research inference result.
-        # -----------------------------------------------------
+        (
+            territories,
+            primary_territory,
+            culprit_artery,
+        ) = self._analyze_territories(features)
+
+        # -------------------------------------------------
+        # G. Assemble the ensemble result
+        # -------------------------------------------------
+
         result = {
             "status": "success",
+
+            # Statistical prediction.
             "risk_score_pct": risk_score_pct,
             "statistical_tier": statistical_tier,
             "risk_tier": statistical_tier,
             "triage_action": statistical_action,
 
+            # Preserve original engine probabilities.
             "engine_probabilities": {
-                "interpretable_rf": round(p_rf, 3),
-                "deep_cnn": round(p_cnn, 3),
-                "fused_composite": round(p_composite, 3),
+                "interpretable_rf": round(
+                    p_rf, 3
+                ),
+                "deep_cnn": round(
+                    p_cnn, 3
+                ),
+                "fused_composite": round(
+                    p_composite, 3
+                ),
             },
 
+            # Anatomical interpretation.
             "culprit_artery": culprit_artery,
-            "primary_ischemic_territory": primary_territory,
+
+            "primary_ischemic_territory": (
+                primary_territory
+            ),
+
             "territory_breakdown": territories,
 
+            # Trusted ST measurements.
             "st_by_lead": st_by_lead,
 
+            # =================================================
+            # MILESTONE 4: Measurement-quality metadata handoff
+            # =================================================
+            #
+            # These fields are produced during V1 feature
+            # extraction but were previously discarded.
+            #
+            # Forwarding them allows the existing triage
+            # quality-handoff module to inspect concerns.
+            #
+            # Missing metadata remains None.
+            #
+            # IMPORTANT:
+            # These fields DO NOT:
+            #   - Modify RF classifier features
+            #   - Modify CNN input
+            #   - Modify model probabilities
+            #   - Change clinical guardrail thresholds
+            #   - Change final triage routing
+            #   - Establish clinical measurement validity
+
+            "quality_contract": feat_result.get(
+                "quality_contract"
+            ),
+
+            "st_provenance": feat_result.get(
+                "st_provenance"
+            ),
+
+            "provenance_consistency": feat_result.get(
+                "provenance_consistency"
+            ),
+
+            "sqi_details": feat_result.get(
+                "sqi_details"
+            ),
+
+            # Patient demographics.
             "patient": {
                 "age": age,
                 "sex": sex,
             },
 
+            # Original clinical biomarkers.
             "clinical_biomarkers": {
-                "heart_rate_bpm": features["heart_rate_bpm"],
-                "qrs_duration_ms": features["qrs_duration_ms"],
-                "qrs_plausible": features["qrs_plausible"],
+                "heart_rate_bpm": features[
+                    "heart_rate_bpm"
+                ],
+
+                "qrs_duration_ms": features[
+                    "qrs_duration_ms"
+                ],
+
+                "qrs_plausible": features[
+                    "qrs_plausible"
+                ],
+
                 "max_st_elevation_mv": features[
                     "max_st_elevation_mv"
                 ],
-                "overall_sqi": features["overall_sqi"],
-                "beats_used": features["beats_used"],
+
+                "overall_sqi": features[
+                    "overall_sqi"
+                ],
+
+                "beats_used": features[
+                    "beats_used"
+                ],
             },
         }
 
-        # -----------------------------------------------------
-        # Step H: Apply the existing research triage rules.
-        # -----------------------------------------------------
-        clinical_triage = self.triage_engine.evaluate(
-            result
+        # -------------------------------------------------
+        # H. Apply the existing clinical triage engine
+        # -------------------------------------------------
+
+        # The engine now sees quality_contract and
+        # st_provenance when those are available.
+        #
+        # Its quality assessment is metadata-only.
+        # Existing findings and routing are preserved.
+        clinical_triage = (
+            self.triage_engine.evaluate(result)
         )
 
         result["clinical_triage"] = clinical_triage
-        result["risk_tier"] = clinical_triage["final_tier"]
-        result["triage_action"] = clinical_triage[
-            "triage_action"
-        ]
+
+        # Preserve existing final output fields.
+        result["risk_tier"] = (
+            clinical_triage["final_tier"]
+        )
+
+        result["triage_action"] = (
+            clinical_triage["triage_action"]
+        )
 
         return result
