@@ -1,35 +1,73 @@
+
 """
-CardioSense - Clinician Decision-Support REST API
-FastAPI backend delivering record catalogues, 12-lead waveform time-series,
-and evidence-grounded clinical triage evaluations.
+CardioSense — REST API
+
+FastAPI backend for the CardioSense research prototype.
+
+Responsibilities:
+    - Discover available ECG recordings
+    - Return standardized 12-lead waveforms
+    - Run legacy V1 ensemble inference
+    - Generate research triage reports
+
+Input contract:
+    Every WFDB recording passes through the centralized
+    load_standardized_ecg() function before processing.
+
+    The loader guarantees:
+        - Valid 12-lead ECG structure
+        - Standardized channel ordering
+        - Voltage conversion to millivolts
+        - Valid sampling frequency
+        - Finite waveform samples
+
+Safety:
+    Unknown record IDs must return HTTP 404.
+    Never substitute a different patient's recording.
+
+Research use only. Not a clinically validated medical device.
 """
 
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import (
+    PlainTextResponse,
+    RedirectResponse,
+)
 from pydantic import BaseModel
-import wfdb
 
+from src.data.ecg_loader import load_standardized_ecg
 from src.dsp.filters import filter_ecg
-from src.triage.leads import cut_point_mv, find_stemi_pairs
+from src.triage.leads import (
+    cut_point_mv,
+    find_stemi_pairs,
+)
 from src.triage.report_generator import generate_clinical_report
 from src.triage.risk_fusion import CardioSenseEnsemble
 from src.triage.triage_rules import ClinicalTriageEngine
 
-# ---------------------------------------------------------
-# Block 1: App Setup & Cross-Origin (CORS) Configuration
-# What it does: Initializes FastAPI and enables CORS for local frontend dev.
-# How it does it: Instantiates FastAPI and applies CORSMiddleware.
-# ---------------------------------------------------------
+
+# =========================================================
+# 1. Application configuration
+# =========================================================
+
 app = FastAPI(
     title="CardioSense API",
-    description="Clinical Decision-Support System for Myocardial Infarction & Ischemia",
+    description=(
+        "Research API for 12-lead ECG analysis, "
+        "experimental model inference, and auditable "
+        "signal-derived findings."
+    ),
     version="0.1.0",
 )
 
+# Preserve the existing local-development CORS policy.
+# Production origins and credentials require separate review.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,158 +76,523 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-project_root = Path(__file__).resolve().parents[2]
-samples_dir = project_root / "data" / "samples"
-cohort_dir = project_root / "data" / "cohort"
-manifest_path = cohort_dir / "cohort_manifest.csv"
 
-# Global pipeline singletons loaded once on server start
+# =========================================================
+# 2. Project paths
+# =========================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+SAMPLES_DIR = PROJECT_ROOT / "data" / "samples"
+COHORT_DIR = PROJECT_ROOT / "data" / "cohort"
+MANIFEST_PATH = COHORT_DIR / "cohort_manifest.csv"
+
+
+# Preserve the original module-level names for compatibility
+# with existing code that may import or monkeypatch them.
+project_root = PROJECT_ROOT
+samples_dir = SAMPLES_DIR
+cohort_dir = COHORT_DIR
+manifest_path = MANIFEST_PATH
+
+
+# =========================================================
+# 3. Research pipeline initialization
+# =========================================================
+
+# Load existing V1 RF and CNN checkpoints once.
+#
+# This preserves the current application's startup policy.
+# Missing checkpoints will prevent API initialization.
+#
+# V3 assessment remains separate from legacy V1 scoring.
 ensemble_pipeline = CardioSenseEnsemble()
+
 triage_engine = ClinicalTriageEngine()
 
 
-# ---------------------------------------------------------
-# Block 2: Root Redirect & Health Check
-# What it does: Automatically routes visitors to interactive API docs.
-# How it does it: Returns an HTTP 307 redirect to /docs.
-# ---------------------------------------------------------
-@app.get("/")
-def root():
-    return RedirectResponse(url="/docs")
+# =========================================================
+# 4. Request schemas
+# =========================================================
 
-
-@app.get("/api/health")
-def health():
-    return {"status": "ok", "service": "CardioSense API", "version": "0.1.0"}
-
-
-# ---------------------------------------------------------
-# Block 3: Data Schemas
-# What it does: Defines structured inputs for evaluation requests.
-# How it does it: Uses Pydantic BaseModel for type validation.
-# ---------------------------------------------------------
 class EvaluationRequest(BaseModel):
+    """Input for the research evaluation endpoint."""
+
     record_id: str
     age: Optional[float] = None
     sex: Optional[str] = None
 
 
-# ---------------------------------------------------------
-# Block 4: Record Catalogue Discovery
-# What it does: Lists all available sample and cohort ECGs on disk.
-# How it does it: Scans data/samples and data/cohort for .hea files.
-# ---------------------------------------------------------
+# =========================================================
+# 5. API root and health check
+# =========================================================
+
+@app.get("/")
+def root():
+    """Redirect users to the interactive API documentation."""
+    return RedirectResponse(url="/docs")
+
+
+@app.get("/api/health")
+def health():
+    """Return basic service information."""
+    return {
+        "status": "ok",
+        "service": "CardioSense API",
+        "version": "0.1.0",
+    }
+
+
+# =========================================================
+# 6. Record discovery
+# =========================================================
+
 @app.get("/api/records")
 def list_records():
+    """List locally available sample and cohort recordings."""
+
     records = []
 
-    # 1. Sample records
-    for hea_path in sorted(samples_dir.glob("**/*.hea")):
-        base_name = hea_path.stem
+    # -----------------------------------------------------
+    # A. Discover sample recordings.
+    # -----------------------------------------------------
+    for header in sorted(samples_dir.glob("**/*.hea")):
+
+        record_path = header.with_suffix("")
+
+        # A usable WFDB record needs both files.
+        if not record_path.with_suffix(".dat").is_file():
+            continue
+
+        record_id = header.stem
+
         records.append({
-            "id": base_name,
+            "id": record_id,
             "category": "sample",
-            "path": str(hea_path.with_suffix("")),
-            "description": f"Sample record ({base_name})",
+            "path": str(record_path),
+            "description": f"Sample record ({record_id})",
         })
 
-    # 2. Cohort records (if manifest exists)
-    if manifest_path.exists():
-        import pandas as pd
-        df = pd.read_csv(manifest_path)
-        for _, row in df.iterrows():
-            wf_path = cohort_dir / f"{row['filename_lr']}.hea"
-            if wf_path.exists():
-                records.append({
-                    "id": str(row["ecg_id"]),
-                    "category": "cohort",
-                    "path": str(cohort_dir / row["filename_lr"]),
-                    "age": row.get("age"),
-                    "sex": "Male" if row.get("sex") == 0.0 else "Female",
-                    "diagnosis": "infarction" if row.get("target_label") == 1 else "normal",
-                    "description": f"Patient #{int(row['ecg_id']):05d}",
-                })
+    # -----------------------------------------------------
+    # B. Discover cohort recordings.
+    # -----------------------------------------------------
+    if manifest_path.is_file():
 
-    return {"count": len(records), "records": records}
+        manifest = pd.read_csv(manifest_path)
+
+        for _, row in manifest.iterrows():
+
+            relative_path = row["filename_lr"]
+            record_path = cohort_dir / relative_path
+
+            # Skip incomplete local files.
+            # The canonical cohort definition is unchanged.
+            if not (
+                record_path.with_suffix(".hea").is_file()
+                and record_path.with_suffix(".dat").is_file()
+            ):
+                continue
+
+            ecg_id = int(row["ecg_id"])
+
+            # Preserve existing response fields while avoiding
+            # a false female assignment for missing sex data.
+            sex_value = row.get("sex")
+
+            if pd.isna(sex_value):
+                sex_label = None
+            elif int(sex_value) == 0:
+                sex_label = "Male"
+            elif int(sex_value) == 1:
+                sex_label = "Female"
+            else:
+                sex_label = None
+
+            records.append({
+                "id": str(ecg_id),
+                "category": "cohort",
+                "path": str(record_path),
+                "age": (
+                    None
+                    if pd.isna(row.get("age"))
+                    else float(row["age"])
+                ),
+                "sex": sex_label,
+                "diagnosis": (
+                    "infarction"
+                    if int(row["target_label"]) == 1
+                    else "normal"
+                ),
+                "description": f"Patient #{ecg_id:05d}",
+            })
+
+    return {
+        "count": len(records),
+        "records": records,
+    }
 
 
-# ---------------------------------------------------------
-# Block 5: Waveform Time-Series Stream
-# What it does: Streams 12-lead raw and filtered voltage arrays.
-# How it does it: Loads via wfdb.rdsamp(), applies zero-phase filter,
-#                 and returns millivolt arrays indexed by lead name.
-# ---------------------------------------------------------
+# =========================================================
+# 7. Exact ECG record lookup
+# =========================================================
+
+def _find_record_path(record_id: str) -> Path:
+    """Return the exact requested WFDB record path.
+
+    Unknown records return HTTP 404.
+
+    No fallback to a different sample is permitted.
+    """
+
+    # -----------------------------------------------------
+    # A. Validate the requested identifier.
+    # -----------------------------------------------------
+    # Prevent path separators, wildcard characters, and
+    # unsupported filename expressions.
+    if (
+        not record_id
+        or len(record_id) > 64
+        or not all(
+            char.isascii()
+            and (char.isalnum() or char in "_-")
+            for char in record_id
+        )
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid ECG record ID.",
+        )
+
+    # -----------------------------------------------------
+    # B. Check the official cohort manifest.
+    # -----------------------------------------------------
+    if record_id.isdecimal() and manifest_path.is_file():
+
+        manifest = pd.read_csv(
+            manifest_path,
+            dtype={"ecg_id": "string"},
+        )
+
+        normalized_id = str(int(record_id))
+
+        matches = manifest[
+            manifest["ecg_id"] == normalized_id
+        ]
+
+        # A duplicate is a manifest integrity error.
+        if len(matches) > 1:
+            raise HTTPException(
+                status_code=500,
+                detail="Duplicate ECG ID in cohort manifest.",
+            )
+
+        if not matches.empty:
+
+            relative_path = matches.iloc[0]["filename_lr"]
+
+            if not isinstance(relative_path, str):
+                raise HTTPException(
+                    status_code=500,
+                    detail="Invalid cohort waveform path.",
+                )
+
+            # Resolve and constrain the path to data/cohort.
+            # Metadata must never point outside that directory.
+            base_dir = cohort_dir.resolve()
+            record_path = (
+                cohort_dir / relative_path
+            ).resolve()
+
+            if not record_path.is_relative_to(base_dir):
+                raise HTTPException(
+                    status_code=500,
+                    detail="Cohort manifest contains an unsafe path.",
+                )
+
+            header = record_path.with_suffix(".hea")
+            signal = record_path.with_suffix(".dat")
+
+            if header.is_file() and signal.is_file():
+                return record_path
+
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    f"ECG '{record_id}' exists in the cohort "
+                    "but its waveform files are missing."
+                ),
+            )
+
+    # -----------------------------------------------------
+    # C. Check local sample recordings.
+    # -----------------------------------------------------
+    # Examples:
+    #   "00001_lr" -> "00001_lr"
+    #   "1"        -> "00001_lr"
+    sample_names = [record_id]
+
+    if record_id.isdecimal():
+        sample_names.append(
+            f"{int(record_id):05d}_lr"
+        )
+
+    # Use exact filename matching rather than a prefix
+    # such as 'record_id*', which may match other records.
+    for sample_name in dict.fromkeys(sample_names):
+
+        matches = sorted(
+            samples_dir.glob(f"**/{sample_name}.hea")
+        )
+
+        for header in matches:
+
+            record_path = header.with_suffix("")
+
+            if record_path.with_suffix(".dat").is_file():
+                return record_path
+
+    # -----------------------------------------------------
+    # D. Not found.
+    # -----------------------------------------------------
+    # Never return the first available sample.
+    raise HTTPException(
+        status_code=404,
+        detail=f"ECG record '{record_id}' not found.",
+    )
+
+
+# =========================================================
+# 8. Centralized API ECG loading
+# =========================================================
+
+def _load_record(record_id: str):
+    """Load one exact recording through the shared ECG contract.
+
+    Returns
+    -------
+    signals_mv:
+        Unfiltered ECG with shape (samples, 12), in mV.
+
+    fs:
+        Sampling frequency in Hz.
+
+    lead_names:
+        Standardized ECG lead names.
+
+    Raises
+    ------
+    HTTPException:
+        400 for malformed record identifiers.
+        404 for missing recordings.
+        422 for invalid ECG waveform metadata or samples.
+    """
+
+    # Resolve the exact requested ECG.
+    record_path = _find_record_path(record_id)
+
+    try:
+        # The shared loader handles:
+        # - WFDB waveform reading
+        # - Sampling frequency validation
+        # - Channel and lead-name validation
+        # - Physical voltage unit conversion
+        # - Reordering into canonical 12-lead order
+        signals_mv, fs, lead_names = load_standardized_ecg(
+            record_path
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid ECG input: {exc}",
+        ) from exc
+
+    except (FileNotFoundError, OSError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="Unable to read the requested ECG waveform.",
+        ) from exc
+
+    return signals_mv, fs, lead_names
+
+
+# =========================================================
+# 9. Waveform streaming endpoint
+# =========================================================
+
 @app.get("/api/records/{record_id}/signals")
 def get_record_signals(record_id: str):
-    record_path = _find_record_path(record_id)
-    raw_signals, fields = wfdb.rdsamp(str(record_path))
-    fs = float(fields["fs"])
-    lead_names = fields["sig_name"]
-    time_sec = [round(i / fs, 3) for i in range(len(raw_signals))]
+    """Return standardized raw and filtered ECG waveforms."""
 
-    cleaned_signals = filter_ecg(raw_signals, fs=fs)
+    # -----------------------------------------------------
+    # A. Load and standardize the requested ECG.
+    # -----------------------------------------------------
+    signals_mv, fs, lead_names = _load_record(
+        record_id
+    )
 
-    leads_raw = {lead: [round(float(v), 3) for v in raw_signals[:, i]] for i, lead in enumerate(lead_names)}
-    leads_cleaned = {lead: [round(float(v), 3) for v in cleaned_signals[:, i]] for i, lead in enumerate(lead_names)}
+    # -----------------------------------------------------
+    # B. Create the time axis.
+    # -----------------------------------------------------
+    time_sec = [
+        round(i / fs, 3)
+        for i in range(len(signals_mv))
+    ]
 
+    # -----------------------------------------------------
+    # C. Filter standardized signals.
+    # -----------------------------------------------------
+    # signals_mv is already in millivolts and the
+    # canonical lead order.
+    #
+    # Do not convert the units a second time.
+    cleaned = filter_ecg(
+        signals_mv,
+        fs=fs,
+    )
+
+    # -----------------------------------------------------
+    # D. Convert NumPy arrays into JSON-compatible data.
+    # -----------------------------------------------------
+    raw_by_lead = {
+        lead: [
+            round(float(value), 3)
+            for value in signals_mv[:, index]
+        ]
+        for index, lead in enumerate(lead_names)
+    }
+
+    filtered_by_lead = {
+        lead: [
+            round(float(value), 3)
+            for value in cleaned[:, index]
+        ]
+        for index, lead in enumerate(lead_names)
+    }
+
+    # Preserve the existing API response structure.
     return {
         "record_id": record_id,
         "sampling_rate": fs,
         "time_seconds": time_sec,
         "lead_names": lead_names,
-        "raw_signals": leads_raw,
-        "filtered_signals": leads_cleaned,
+        "raw_signals": raw_by_lead,
+        "filtered_signals": filtered_by_lead,
     }
 
 
-# ---------------------------------------------------------
-# Block 6: Full Clinical Triage Evaluation
-# What it does: Executes dual-engine inference and Fourth UDMI guardrails.
-# How it does it: Computes ML probabilities, evaluates contiguous lead pairs,
-#                 and formats the auditable SBAR clinical note.
-# ---------------------------------------------------------
+# =========================================================
+# 10. Research ensemble evaluation endpoint
+# =========================================================
+
 @app.post("/api/triage/evaluate")
 def evaluate_record(req: EvaluationRequest):
-    record_path = _find_record_path(req.record_id)
-    raw_signals, fields = wfdb.rdsamp(str(record_path))
-    fs = float(fields["fs"])
-    lead_names = fields["sig_name"]
+    """Run the legacy V1 ensemble on a validated ECG."""
 
-    ensemble_res = ensemble_pipeline.predict(
-        raw_signals,
-        fs=fs,
-        lead_names=lead_names,
-        age=req.age,
-        sex=req.sex,
+    # -----------------------------------------------------
+    # A. Load the requested ECG.
+    # -----------------------------------------------------
+    signals_mv, fs, lead_names = _load_record(
+        req.record_id
     )
 
+    # -----------------------------------------------------
+    # B. Run the existing legacy V1 ensemble.
+    # -----------------------------------------------------
+    # The loader already converted physical units to mV.
+    #
+    # Passing units="mV" is essential:
+    # supplying the original WFDB units here would
+    # incorrectly convert the waveform twice.
+    try:
+        ensemble_res = ensemble_pipeline.predict(
+            signals_mv,
+            fs=fs,
+            lead_names=lead_names,
+            age=req.age,
+            sex=req.sex,
+            units="mV",
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    # -----------------------------------------------------
+    # C. Handle rejected ECG recordings.
+    # -----------------------------------------------------
     if ensemble_res.get("status") == "rejected":
         return {
             "status": "rejected",
             "reason": ensemble_res.get("reason"),
-            "sqi_details": ensemble_res.get("sqi_details"),
+            "sqi_details": ensemble_res.get(
+                "sqi_details"
+            ),
         }
 
-    triage_res = triage_engine.evaluate(ensemble_res)
-    report_text = generate_clinical_report(req.record_id, ensemble_res, triage_res)
+    # -----------------------------------------------------
+    # D. Run the existing research triage rules.
+    # -----------------------------------------------------
+    triage_res = triage_engine.evaluate(
+        ensemble_res
+    )
 
-    # Compute contiguous pairs grid for UI display
+    # -----------------------------------------------------
+    # E. Generate the existing report.
+    # -----------------------------------------------------
+    report_text = generate_clinical_report(
+        req.record_id,
+        ensemble_res,
+        triage_res,
+    )
+
+    # -----------------------------------------------------
+    # F. Compute contiguous ST lead pairs.
+    # -----------------------------------------------------
     st_by_lead = ensemble_res["st_by_lead"]
-    stemi_pairs = [p._asdict() for p in find_stemi_pairs(st_by_lead, req.age, req.sex)]
 
-    # Compute per-lead cut-point table
+    stemi_pairs = [
+        pair._asdict()
+        for pair in find_stemi_pairs(
+            st_by_lead,
+            req.age,
+            req.sex,
+        )
+    ]
+
+    # -----------------------------------------------------
+    # G. Build per-lead research measurement table.
+    # -----------------------------------------------------
     lead_table = []
+
     for lead in lead_names:
-        thresh, basis = cut_point_mv(lead, req.age, req.sex)
-        val = st_by_lead.get(lead.upper(), 0.0)
+
+        threshold, basis = cut_point_mv(
+            lead,
+            req.age,
+            req.sex,
+        )
+
+        # Missing values are not equivalent to a true
+        # zero-millivolt measurement.
+        reading = st_by_lead.get(lead.upper())
+
         lead_table.append({
             "lead": lead,
-            "st_mv": val,
-            "cut_point_mv": thresh,
+            "st_mv": reading,
+            "cut_point_mv": threshold,
             "basis": basis,
-            "cleared": val >= thresh,
+            "cleared": (
+                None
+                if reading is None
+                else reading >= threshold
+            ),
         })
 
+    # -----------------------------------------------------
+    # H. Preserve the existing response structure.
+    # -----------------------------------------------------
     return {
         "status": "success",
         "record_id": req.record_id,
@@ -201,48 +604,34 @@ def evaluate_record(req: EvaluationRequest):
     }
 
 
-# ---------------------------------------------------------
-# Block 7: Plain-Text SBAR Report Download
-# What it does: Returns the clean formatted clinical text note.
-# How it does it: Calls evaluate_record and outputs PlainTextResponse.
-# ---------------------------------------------------------
-@app.get("/api/records/{record_id}/report", response_class=PlainTextResponse)
-def get_record_report(record_id: str, age: Optional[float] = None, sex: Optional[str] = None):
-    req = EvaluationRequest(record_id=record_id, age=age, sex=sex)
-    eval_res = evaluate_record(req)
-    if eval_res.get("status") == "rejected":
-        raise HTTPException(status_code=400, detail=eval_res.get("reason"))
-    return eval_res["sbar_report"]
+# =========================================================
+# 11. Plain-text research report endpoint
+# =========================================================
 
+@app.get(
+    "/api/records/{record_id}/report",
+    response_class=PlainTextResponse,
+)
+def get_record_report(
+    record_id: str,
+    age: Optional[float] = None,
+    sex: Optional[str] = None,
+):
+    """Return the formatted research report."""
 
-# ---------------------------------------------------------
-# Block 8: Record Path Resolver
-# What it does: Matches a requested record ID to its file path on disk.
-# How it does it: Tries direct match, zero-padded integer, and cohort manifest.
-# ---------------------------------------------------------
-def _find_record_path(record_id: str) -> Path:
-    # 1. Direct glob matching in data/samples
-    for hea in samples_dir.glob(f"**/{record_id}*.hea"):
-        return hea.with_suffix("")
+    req = EvaluationRequest(
+        record_id=record_id,
+        age=age,
+        sex=sex,
+    )
 
-    # 2. Numeric zero-padded matching (e.g., '1' -> '00001_lr')
-    if record_id.isdigit():
-        padded = f"{int(record_id):05d}"
-        for hea in samples_dir.glob(f"**/{padded}*.hea"):
-            return hea.with_suffix("")
+    # Reuse the same validated evaluation pipeline.
+    evaluation = evaluate_record(req)
 
-    # 3. Check data/cohort if manifest exists
-    if manifest_path.exists():
-        import pandas as pd
-        df = pd.read_csv(manifest_path)
-        match = df[df["ecg_id"].astype(str) == str(record_id)]
-        if not match.empty:
-            rel = match.iloc[0]["filename_lr"]
-            return cohort_dir / rel
+    if evaluation.get("status") == "rejected":
+        raise HTTPException(
+            status_code=400,
+            detail=evaluation.get("reason"),
+        )
 
-    # 4. Fallback to first available sample record
-    samples = list(samples_dir.glob("**/*.hea"))
-    if samples:
-        return samples[0].with_suffix("")
-
-    raise HTTPException(status_code=404, detail=f"ECG Record '{record_id}' not found on disk.")
+    return evaluation["sbar_report"]
