@@ -11,39 +11,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout
+      # 1. Check out repository
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # 2. Python
+      # 2. Configure Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # 3. Dependencies
+      # 3. Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m pip check
 
-      # 4. Syntax
+      # 4. Validate Python syntax
       - name: Check Python syntax
         run: python -m compileall -q src scripts
 
-      # 5. Complete deterministic regression gate
+      # 5. Deterministic offline regression tests
       #
-      # Milestone 7 additionally checks:
-      # - Fold-9 validation coverage
-      # - V1/V3 feature availability
-      # - Matched versus unmatched ECG records
-      # - Per-label selection consistency
-      # - Preservation of the reserved test fold
+      # Includes milestones 1-8.
       #
-      # Tests do not require training, downloaded
-      # ECGs, or a new model evaluation.
+      # Milestone 8 adds independent LUDB
+      # expert-reference error accounting.
+      #
+      # No training, waveform downloads,
+      # checkpoint changes, or new holdout evaluation.
 
       - name: Run deterministic test suite
         run: |
@@ -81,8 +79,17 @@ jobs:
             tests/test_v3_candidate_integrity.py \
             tests/test_v3_research_inference.py \
             tests/test_paired_fold9_audit.py \
-            tests/test_validation_coverage.py
+            tests/test_validation_coverage.py \
+            tests/test_ludb_qrs_accuracy.py
 
-      # 6. Existing standalone triage regression
+      # 6. Audit committed LUDB expert-reference results
+      #
+      # Uses saved measurements only.
+      # Does not load raw waveforms or run QRS detection.
+
+      - name: Audit saved QRS reference accuracy
+        run: python -m scripts.audit_ludb_qrs_accuracy
+
+      # 7. Preserve existing triage regression
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py
