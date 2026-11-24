@@ -11,37 +11,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Check out repository
+      # 1. Checkout
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # 2. Configure Python
+      # 2. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # 3. Install dependencies
+      # 3. Dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m pip check
 
-      # 4. Validate Python syntax
+      # 4. Syntax validation
       - name: Check Python syntax
         run: python -m compileall -q src scripts
 
-      # 5. Deterministic offline regression tests
+      # 5. Regression tests: milestones 1-9
       #
-      # Includes milestones 1-8.
-      #
-      # Milestone 8 adds independent LUDB
-      # expert-reference error accounting.
-      #
-      # No training, waveform downloads,
-      # checkpoint changes, or new holdout evaluation.
+      # No ECG downloads, training, checkpoint promotion,
+      # production routing changes, or reserved-set evaluation.
 
       - name: Run deterministic test suite
         run: |
@@ -80,16 +75,17 @@ jobs:
             tests/test_v3_research_inference.py \
             tests/test_paired_fold9_audit.py \
             tests/test_validation_coverage.py \
-            tests/test_ludb_qrs_accuracy.py
+            tests/test_ludb_qrs_accuracy.py \
+            tests/test_m09_readiness.py
 
-      # 6. Audit committed LUDB expert-reference results
-      #
-      # Uses saved measurements only.
-      # Does not load raw waveforms or run QRS detection.
-
+      # 6. Previously saved LUDB expert measurements
       - name: Audit saved QRS reference accuracy
         run: python -m scripts.audit_ludb_qrs_accuracy
 
-      # 7. Preserve existing triage regression
+      # 7. Milestone 9 failure-analysis reconciliation
+      - name: Audit boundary regressions and research readiness
+        run: python -m scripts.audit_m09_readiness
+
+      # 8. Standalone deployed guardrail tests
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py
