@@ -12,51 +12,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ---------------------------------------------------
-      # 1. Check out the repository
-      # ---------------------------------------------------
+      # 1. Check out repository
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------
       # 2. Configure Python
-      # ---------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # ---------------------------------------------------
-      # 3. Install project dependencies
-      # ---------------------------------------------------
+      # 3. Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m pip check
 
-      # ---------------------------------------------------
       # 4. Validate Python syntax
-      # ---------------------------------------------------
       - name: Check Python syntax
         run: python -m compileall -q src
 
-      # ---------------------------------------------------
       # 5. Run deterministic offline regression tests
-      # ---------------------------------------------------
-      # Includes:
-      # - Original project contract tests
-      # - ECG input and signal validation
-      # - Feature and SQI regression tests
-      # - Model compatibility research tests
-      # - Milestone 4 quality metadata handoff
-      # - Milestone 4 research report validation
-      # - Milestone 4 ST measurement availability
-      # - Milestone 4 API/report measurement parity
       #
-      # No real ECG downloads or model retraining.
-      # ---------------------------------------------------
+      # Includes:
+      # - Original ECG and cohort contract tests
+      # - Signal quality and feature extraction
+      # - Model compatibility research tests
+      # - Milestone 4 reporting and API tests
+      # - Milestone 5 candidate integrity tests
+      # - Milestone 5 isolated V3 research scorer tests
+      #
+      # No waveform downloads, model training,
+      # checkpoint replacement, or fold-10 scoring.
 
       - name: Run deterministic test suite
         run: |
@@ -90,10 +79,10 @@ jobs:
             tests/test_report_st_availability.py \
             tests/test_report_measurement_parity.py \
             tests/test_st_measurement_view.py \
-            tests/test_api_measurement_view.py
+            tests/test_api_measurement_view.py \
+            tests/test_v3_candidate_integrity.py \
+            tests/test_v3_research_inference.py
 
-      # ---------------------------------------------------
-      # 6. Preserve standalone triage regression
-      # ---------------------------------------------------
+      # 6. Standalone triage regression
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py
