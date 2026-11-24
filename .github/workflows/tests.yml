@@ -1,7 +1,6 @@
 
 name: CardioSense Tests
 
-# Run deterministic checks on pushes and pull requests.
 on:
   push:
   pull_request:
@@ -12,33 +11,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Check out repository
+      # 1. Checkout
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # 2. Configure Python
+      # 2. Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # 3. Install dependencies
+      # 3. Dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m pip check
 
-      # 4. Validate Python syntax
+      # 4. Syntax
       - name: Check Python syntax
         run: python -m compileall -q src scripts
 
-      # 5. Deterministic offline regressions
+      # 5. Complete deterministic regression gate
       #
-      # Milestone 6 verifies saved fold-9 paired predictions.
-      # It does not train, score ECGs, evaluate fold 10,
-      # or modify deployed checkpoints.
+      # Milestone 7 additionally checks:
+      # - Fold-9 validation coverage
+      # - V1/V3 feature availability
+      # - Matched versus unmatched ECG records
+      # - Per-label selection consistency
+      # - Preservation of the reserved test fold
+      #
+      # Tests do not require training, downloaded
+      # ECGs, or a new model evaluation.
 
       - name: Run deterministic test suite
         run: |
@@ -75,8 +80,9 @@ jobs:
             tests/test_api_measurement_view.py \
             tests/test_v3_candidate_integrity.py \
             tests/test_v3_research_inference.py \
-            tests/test_paired_fold9_audit.py
+            tests/test_paired_fold9_audit.py \
+            tests/test_validation_coverage.py
 
-      # 6. Standalone triage regression
+      # 6. Existing standalone triage regression
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py
