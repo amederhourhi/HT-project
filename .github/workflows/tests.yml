@@ -32,20 +32,13 @@ jobs:
 
       # 4. Validate Python syntax
       - name: Check Python syntax
-        run: python -m compileall -q src
+        run: python -m compileall -q src scripts
 
-      # 5. Run deterministic offline regression tests
+      # 5. Deterministic offline regressions
       #
-      # Includes:
-      # - Original ECG and cohort contract tests
-      # - Signal quality and feature extraction
-      # - Model compatibility research tests
-      # - Milestone 4 reporting and API tests
-      # - Milestone 5 candidate integrity tests
-      # - Milestone 5 isolated V3 research scorer tests
-      #
-      # No waveform downloads, model training,
-      # checkpoint replacement, or fold-10 scoring.
+      # Milestone 6 verifies saved fold-9 paired predictions.
+      # It does not train, score ECGs, evaluate fold 10,
+      # or modify deployed checkpoints.
 
       - name: Run deterministic test suite
         run: |
@@ -81,7 +74,8 @@ jobs:
             tests/test_st_measurement_view.py \
             tests/test_api_measurement_view.py \
             tests/test_v3_candidate_integrity.py \
-            tests/test_v3_research_inference.py
+            tests/test_v3_research_inference.py \
+            tests/test_paired_fold9_audit.py
 
       # 6. Standalone triage regression
       - name: Run standalone guardrail regression
