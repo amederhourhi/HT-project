@@ -11,33 +11,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout
+      # --------------------------------------------------
+      # 1. Check out repository
+      # --------------------------------------------------
       - name: Check out repository
         uses: actions/checkout@v4
 
+      # --------------------------------------------------
       # 2. Set up Python
+      # --------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # 3. Dependencies
+      # --------------------------------------------------
+      # 3. Install dependencies
+      # --------------------------------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m pip check
 
-      # 4. Syntax validation
+      # --------------------------------------------------
+      # 4. Validate Python syntax
+      # --------------------------------------------------
       - name: Check Python syntax
         run: python -m compileall -q src scripts
 
-      # 5. Regression tests: milestones 1-9
+      # --------------------------------------------------
+      # 5. Run deterministic regression tests
       #
-      # No ECG downloads, training, checkpoint promotion,
-      # production routing changes, or reserved-set evaluation.
-
+      # Includes:
+      # - Engineering milestones 1-9
+      # - Phase II R-peak matching tests
+      # - Experimental refinement tests
+      #
+      # All tests run offline using synthetic or
+      # committed test artifacts.
+      #
+      # No raw ECG downloads, model training,
+      # checkpoint changes, production promotion,
+      # or reserved-set evaluation.
+      # --------------------------------------------------
       - name: Run deterministic test suite
         run: |
           python -m pytest -q \
@@ -76,16 +94,30 @@ jobs:
             tests/test_paired_fold9_audit.py \
             tests/test_validation_coverage.py \
             tests/test_ludb_qrs_accuracy.py \
-            tests/test_m09_readiness.py
+            tests/test_m09_readiness.py \
+            tests/test_ludb_rpeaks_phase2.py \
+            tests/test_compare_rpeak_refinement.py
 
-      # 6. Previously saved LUDB expert measurements
+      # --------------------------------------------------
+      # 6. Audit saved LUDB expert-reference results
+      #
+      # Reads committed measurement results only.
+      # Does not process raw ECG waveforms.
+      # --------------------------------------------------
       - name: Audit saved QRS reference accuracy
         run: python -m scripts.audit_ludb_qrs_accuracy
 
-      # 7. Milestone 9 failure-analysis reconciliation
+      # --------------------------------------------------
+      # 7. Audit QRS boundary regressions
+      #
+      # Reconciles saved onset, offset, and duration
+      # errors against the existing investigation data.
+      # --------------------------------------------------
       - name: Audit boundary regressions and research readiness
         run: python -m scripts.audit_m09_readiness
 
-      # 8. Standalone deployed guardrail tests
+      # --------------------------------------------------
+      # 8. Preserve standalone clinical guardrail tests
+      # --------------------------------------------------
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py
