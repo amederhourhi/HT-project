@@ -42,19 +42,17 @@ jobs:
         run: python -m compileall -q src scripts
 
       # --------------------------------------------------
-      # 5. Run deterministic regression tests
+      # 5. Deterministic regression tests
       #
       # Includes:
       # - Engineering milestones 1-9
-      # - Phase II R-peak matching tests
-      # - Experimental refinement tests
-      #
-      # All tests run offline using synthetic or
-      # committed test artifacts.
+      # - Phase II development benchmarks
+      # - Frozen paired R-peak evaluation protocol
+      # - Independent runner authorization guardrails
       #
       # No raw ECG downloads, model training,
       # checkpoint changes, production promotion,
-      # or reserved-set evaluation.
+      # or reserved-cohort evaluation.
       # --------------------------------------------------
       - name: Run deterministic test suite
         run: |
@@ -97,28 +95,23 @@ jobs:
             tests/test_m09_readiness.py \
             tests/test_ludb_rpeaks_phase2.py \
             tests/test_compare_rpeak_refinement.py \
-            tests/test_rpeak_pairwise_protocol.py
+            tests/test_rpeak_pairwise_protocol.py \
+            tests/test_rpeak_independent_runner.py
 
       # --------------------------------------------------
       # 6. Audit saved LUDB expert-reference results
-      #
-      # Reads committed measurement results only.
-      # Does not process raw ECG waveforms.
       # --------------------------------------------------
       - name: Audit saved QRS reference accuracy
         run: python -m scripts.audit_ludb_qrs_accuracy
 
       # --------------------------------------------------
-      # 7. Audit QRS boundary regressions
-      #
-      # Reconciles saved onset, offset, and duration
-      # errors against the existing investigation data.
+      # 7. Audit previously identified QRS regressions
       # --------------------------------------------------
       - name: Audit boundary regressions and research readiness
         run: python -m scripts.audit_m09_readiness
 
       # --------------------------------------------------
-      # 8. Preserve standalone clinical guardrail tests
+      # 8. Preserve standalone clinical guardrails
       # --------------------------------------------------
       - name: Run standalone guardrail regression
         run: python tests/test_triage.py
