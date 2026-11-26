@@ -96,7 +96,8 @@ jobs:
             tests/test_ludb_qrs_accuracy.py \
             tests/test_m09_readiness.py \
             tests/test_ludb_rpeaks_phase2.py \
-            tests/test_compare_rpeak_refinement.py
+            tests/test_compare_rpeak_refinement.py \
+            tests/test_rpeak_pairwise_protocol.py
 
       # --------------------------------------------------
       # 6. Audit saved LUDB expert-reference results
